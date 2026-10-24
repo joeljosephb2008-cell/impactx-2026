@@ -260,7 +260,7 @@
         <div class="bar"><i style="--w:${pct}%"></i></div>
         <p class="scam">🔒 ${esc(t('scam'))}</p></div>${heroArt()}</section>
       <div class="cta-row"><a class="tile rise" href="#/start"><span class="t-ic">${ART.product('start')}</span><b>${t('start')}</b><small>${esc(t('tile_start_d'))}</small></a>
-      <a class="tile rise" href="#/reviews"><span class="t-ic stars-ic">★★★</span><b>${t('rate')}</b><small>${ui.reviews.length} ${esc(t('reviews_saved'))}</small></a>
+      <a class="tile rise" href="#/reviews"><span class="t-ic stars-ic">★★★★</span><b>${t('rate')}</b><small>${ui.reviews.length} ${esc(t('reviews_saved'))}</small></a>
       <button class="tile rise" data-act="chat"><span class="t-ic chat-ic"><i></i><i></i><i></i></span><b>${t('need')}</b><small>${esc(t('chat_ph'))}</small></button></div>
       <h2>${t('items')}</h2><div class="cards">${['A', 'B'].map(retCard).join('')}${extra.map(retCard).join('')}</div>
       <h2>${t('products')}</h2>${productsBlock(true)}${faqBlock()}`;

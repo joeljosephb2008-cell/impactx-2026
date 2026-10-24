@@ -473,3 +473,76 @@ html[data-big="1"] main { zoom: 1.15; }
   .panel, .item-hero { box-shadow: none !important; border: 1px solid #ccc !important; break-inside: avoid; }
   main::before { content: "returnease · refund receipt · Simulated order, for demo"; display: block; font-weight: 800; margin-bottom: 1rem; }
 }
+
+/* ================================================================ MOTION EVERYWHERE (round 2)
+   Entrance animations play only when you arrive on a page (main.page-in), so taps never flicker. */
+main.page-in .rise:nth-child(2) { animation-delay: .05s; } main.page-in .rise:nth-child(3) { animation-delay: .1s; }
+main.page-in .rise:nth-child(4) { animation-delay: .15s; } main.page-in .rise:nth-child(5) { animation-delay: .2s; }
+main.page-in .rise:nth-child(6) { animation-delay: .25s; } main.page-in .rise:nth-child(n+7) { animation-delay: .3s; }
+main.page-in .chips .chip, main.page-in .tagrow .chip { animation: chippop .45s var(--ease) both; }
+main.page-in .chips .chip:nth-child(2) { animation-delay: .08s; } main.page-in .chips .chip:nth-child(3) { animation-delay: .16s; } main.page-in .chips .chip:nth-child(n+4) { animation-delay: .24s; }
+@keyframes chippop { from { opacity: 0; transform: scale(.6); } 70% { transform: scale(1.06); } to { opacity: 1; transform: none; } }
+main.page-in .legs li { animation: slidein .5s var(--ease) both; } .legs li:nth-child(2) { animation-delay: .1s; } .legs li:nth-child(3) { animation-delay: .2s; } .legs li:nth-child(4) { animation-delay: .3s; }
+@keyframes slidein { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+main.page-in .verdict { animation: rise .6s .35s var(--ease) both; }
+main.page-in .three > div { animation: flipin .55s var(--ease) both; } .three > div:nth-child(2) { animation-delay: .12s; } .three > div:nth-child(3) { animation-delay: .24s; }
+@keyframes flipin { from { opacity: 0; transform: perspective(500px) rotateX(-55deg); } to { opacity: 1; transform: none; } }
+main.page-in .status-msg { animation: fadeup .6s var(--ease) both; }
+main.page-in .st-tools .btn { animation: chippop .4s var(--ease) both; } .st-tools .btn:nth-child(2) { animation-delay: .06s; } .st-tools .btn:nth-child(3) { animation-delay: .12s; } .st-tools .btn:nth-child(4) { animation-delay: .18s; }
+main.page-in .faq-q { animation: rise .5s var(--ease) both; } .faq-q:nth-child(3) { animation-delay: .05s; } .faq-q:nth-child(4) { animation-delay: .1s; } .faq-q:nth-child(n+5) { animation-delay: .15s; }
+main.page-in h1, main.page-in h2 { animation: fadeup .55s var(--ease) both; }
+
+/* lift on hover, squish on press: every card and tappable thing */
+.item-card, .track-card, .product, .pick, .opt, .reason, .metric, .proof-grid figure { transition: transform .3s var(--ease), box-shadow .3s var(--ease); }
+@media (hover: hover) { .item-card:hover, .track-card:hover, .product:hover, .pick:hover, .opt:hover, .reason:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(22, 19, 31, .14); } }
+.item-card:active, .track-card:active, .product:active, .pick:active, .opt:active, .reason:active, .chip:active, .tabbar a:active, .ico:active, .avatar:active { transform: scale(.96); }
+.ico, .avatar { transition: transform .25s var(--ease); } .ico:hover, .avatar:hover { transform: translateY(-2px) rotate(-4deg); }
+.brand img { transition: transform .4s var(--ease); } .brand:hover img { transform: rotate(-3deg) scale(1.04); }
+
+/* shiny primary buttons */
+.btn.primary { position: relative; overflow: hidden; }
+.btn.primary::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.35) 50%, transparent 70%); transform: translateX(-120%); }
+@media (hover: hover) { .btn.primary:hover::after { transform: translateX(120%); transition: transform .8s var(--ease); } }
+.btn.primary.big::after { animation: sheen 3.6s 1.2s ease-in-out infinite; }
+@keyframes sheen { 0%, 70% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+
+/* live status pills breathe */
+.pill.p-waiting, .pill.p-moving, .pill.p-hold { animation: breathe 2.4s ease-in-out infinite; }
+@keyframes breathe { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 35%, transparent); } 50% { box-shadow: 0 0 0 6px color-mix(in srgb, currentColor 0%, transparent); } }
+
+/* stars bounce when picked */
+[data-act=star].on { animation: starpop .45s var(--ease) both; display: inline-block; }
+[data-act=star].on:nth-child(2) { animation-delay: .04s; } [data-act=star].on:nth-child(3) { animation-delay: .08s; } [data-act=star].on:nth-child(4) { animation-delay: .12s; } [data-act=star].on:nth-child(5) { animation-delay: .16s; }
+@keyframes starpop { 0% { transform: scale(.4) rotate(-30deg); } 60% { transform: scale(1.3) rotate(8deg); } 100% { transform: none; } }
+
+/* tab icon hop when it becomes active */
+.tabbar a.on svg { animation: hop .5s var(--ease); }
+@keyframes hop { 0% { transform: translateY(0) scale(1); } 40% { transform: translateY(-6px) scale(1.18); } 100% { transform: translateY(-2px) scale(1.12); } }
+
+/* assistant button floats and invites a tap */
+.fab:not(.open) { animation: floatfab 3.2s ease-in-out infinite; }
+.fab:not(.open)::before { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--tomato); animation: ringout 3.2s ease-out infinite; }
+@keyframes floatfab { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes ringout { 0%, 60% { transform: scale(1); opacity: .7; } 100% { transform: scale(1.6); opacity: 0; } }
+
+/* chat bubbles: mine from the right, bot from the left */
+.msg.me { animation: msgR .35s var(--ease) both; } .msg.bot { animation: msgL .4s var(--ease) both; }
+@keyframes msgR { from { opacity: 0; transform: translateX(18px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes msgL { from { opacity: 0; transform: translateX(-18px) scale(.96); } to { opacity: 1; transform: none; } }
+
+/* details open smoothly; inputs glow on focus; theme switch fades colours */
+details[open] > *:not(summary) { animation: fadeup .35s var(--ease) both; }
+input:focus-visible, textarea:focus-visible, select:focus-visible { outline: none; box-shadow: 0 0 0 4px color-mix(in srgb, var(--sky) 35%, transparent); transition: box-shadow .2s; }
+body, .panel, .top, .tabbar, .item-card, .track-card { transition: background-color .45s ease, color .45s ease, border-color .45s ease; }
+
+/* toasts show a shrinking timer bar */
+.toast { position: relative; overflow: hidden; } .toast::after { content: ""; position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: currentColor; opacity: .35; transform-origin: left; animation: toastbar 4s linear both; }
+@keyframes toastbar { to { transform: scaleX(0); } }
+
+/* proof photos develop like a polaroid */
+.proof-grid figure:last-child img { animation: develop 1.2s ease both; }
+@keyframes develop { from { filter: brightness(2.2) saturate(0) blur(2px); } to { filter: none; } }
+
+/* money ring gently glows once drawn */
+.donut { animation: ringglow 3s 1.3s ease-in-out infinite; border-radius: 50%; }
+@keyframes ringglow { 0%, 100% { filter: drop-shadow(0 0 0 transparent); } 50% { filter: drop-shadow(0 0 10px color-mix(in srgb, var(--mint) 55%, transparent)); } }

@@ -445,3 +445,9 @@ main.page-in { animation: pagein .45s var(--ease) both; }
 .t-ic.stars-ic { display: block; width: auto; height: 44px; line-height: 44px; text-align: left; place-items: start; font-size: 1.4rem !important; letter-spacing: 1px; }
 
 .sim-chip { display: inline-block; margin-top: .5rem; font-size: .74rem; font-weight: 700; padding: .2rem .6rem; border-radius: 999px; background: rgba(255,197,61,.18); color: var(--sun); }
+/* Phone: status pill under the item text so names don't squeeze into one-word lines */
+@media (max-width: 520px) {
+  .pick { flex-wrap: wrap; row-gap: .5rem; }
+  .pick .pk-b { flex: 1 1 calc(100% - 52px - .9rem); }
+  .pick > .pill { margin-left: calc(52px + .9rem); }
+}

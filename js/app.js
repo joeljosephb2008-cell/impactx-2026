@@ -138,7 +138,7 @@
         ${ui.user ? `<button class="avatar" data-act="menu" aria-label="Account menu" aria-expanded="${ui.menu}">${esc((ui.name || 'U')[0].toUpperCase())}</button>` : ''}
       </div>
       ${ui.menu ? `<div class="menu" role="menu"><div class="menu-h"><b>${esc(ui.name)}</b><small>${esc(ui.user.email)}</small><small id="saved">${API.mode === 'cloud' ? '☁︎ Cloud account' : '● This-device account (offline mode)'}</small></div>
-        <a href="#/reviews" role="menuitem">⭐ ${t('reviews')}</a><a href="#/judge" role="menuitem">🧪 ${t('judges')}</a><button data-act="signout" role="menuitem">↪ ${t('signout')}</button></div>` : ''}
+        <a href="#/reviews" role="menuitem">⭐ ${t('reviews')}</a><a href="#/judge" role="menuitem">🧪 ${t('judges')}</a>${installEvt ? '<button data-act="install" role="menuitem">⬇ Install app</button>' : ''}<button data-act="signout" role="menuitem">↪ ${t('signout')}</button></div>` : ''}
     </header>`;
   }
   const TABS = [['home', 'home', 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z'], ['tracking', 'track_title', 'M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z'], ['start', 'new_return', 'M12 5v14M5 12h14'], ['reviews', 'reviews', 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z'], ['report', 'report_tab', 'M12 3l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6zM12 8v5M12 16v.5']];
@@ -267,6 +267,12 @@
   }
 
   // ---------------------------------------------------------------- ITEM
+  function proofPanel(id) {
+    const ph = (st.photos && st.photos[id]) || [];
+    return `<section class="panel rise proof"><div class="row between"><h3>📷 Handover proof</h3><label class="btn ghost sm cam">Take photo<input type="file" accept="image/*" capture="environment" data-photo="${id}" class="sr"></label></div>
+      <p class="small muted">Photograph the item and label before the courier leaves. Each photo gets a time and a SHA-256 fingerprint in the audit log, so it can't be swapped later.</p>
+      ${ph.length ? `<div class="proof-grid">${ph.map(x => `<figure><img src="${x.url}" alt="Handover photo"><figcaption>${when(x.at)}<br><code>${x.hash.slice(0, 12)}…</code></figcaption></figure>`).join('')}</div>` : ''}</section>`;
+  }
   function vItem(route) {
     const id = route[1]; if (!rec(id)) return vHome();
     const it = itemOf(id), r = rec(id), p = progress(id), h = headline(id);
@@ -303,9 +309,11 @@
     if (r.demo && E.current(r.item).state !== 'CLOSED' && p.idx < 4 && !(r.option !== 'refund' && p.idx >= 2)) action = `<section class="panel rise"><button class="btn ghost" data-act="advance" data-v="${id}">Demo: move to next step →</button><p class="small muted">Simulates the courier, warehouse and bank updates.</p></section>`;
     return `<section class="item-hero rise" style="--c:${it.color}"><div class="ih-emoji">${pic(id)}</div><div><h1>${esc(it.name)}</h1><p class="muted">${esc(it.seller)} · ${pill(p.status)}</p></div></section>
       <section class="panel status rise"><p class="status-msg">${esc(h.msg)}</p>
+        <div class="tools"><button class="btn ghost sm" data-act="speak" data-v="${id}" aria-pressed="${ui.speaking === id}">${ui.speaking === id ? '■ Stop' : '🔊 Read aloud'}</button><button class="btn ghost sm" data-act="share" data-v="${id}">↗ Share status</button></div>
         <details class="why"><summary>${t('why')}</summary><p>${esc(h.why)}</p><div class="chips"><span class="chip c-${h.conf}">Confidence: ${h.conf}</span><span class="chip">Source: ${esc(h.src)}</span><span class="chip">As of ${when(h.at)}${h.stale ? ' (old data)' : ''}</span></div>
         <button class="btn ghost sm" data-act="report" data-v="${id}">${t('report')}</button></details></section>
       ${action}
+      ${proofPanel(id)}
       <div class="two"><section class="panel rise"><h3>${t('timeline')}</h3><ol class="tl">${timeline}</ol></section>
       <section class="panel rise"><h3>${t('money')}</h3><div class="money">${donut(legs, a.total, inr(a.total))}<ul class="legs">${legRows}</ul></div>
         <details><summary>${t('how_number')}</summary><table class="lines">${a.lines[0].steps.map(s => `<tr><td>${esc(s.label)}</td><td>${s.amount < 0 ? '−' : ''}${inr(Math.abs(s.amount))}</td></tr>`).join('')}<tr class="tot"><td>Refund</td><td>${inr(a.total)}</td></tr></table></details></section></div>
@@ -478,7 +486,7 @@
   function chatPanel() {
     return `<section class="chat" role="dialog" aria-label="${esc(t('chat_title'))}"><header><b>💬 ${t('chat_title')}</b><button class="ico" data-act="chat" aria-label="Close">✕</button></header>
       <div class="chatlog" id="chatlog" aria-live="polite">${ui.chat.map(m => `<div class="msg ${m.who}">${m.html}${m.card ? `<div class="mcard">${m.card}</div>` : ''}${m.acts ? `<div class="macts">${m.acts.map(([l, h]) => `<a class="btn sm primary" href="${h}" data-act="closechat">${esc(l)} →</a>`).join('')}</div>` : ''}${m.langs ? `<div class="macts">${LANGS.map(([c, n]) => `<button class="btn sm ghost" data-act="setlang" data-v="${c}">${n}</button>`).join('')}</div>` : ''}${m.chips ? `<div class="macts">${m.chips.map(c => `<button class="chip" data-act="ask" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div>` : ''}</div>`).join('')}</div>
-      <form id="chatform" class="chatin"><input id="chatq" autocomplete="off" placeholder="${esc(t('chat_ph'))}" aria-label="Message" maxlength="300"><button class="btn primary" aria-label="Send">➤</button></form></section>`;
+      <form id="chatform" class="chatin"><input id="chatq" autocomplete="off" placeholder="${esc(ui.listening ? 'Listening…' : t('chat_ph'))}" aria-label="Message" maxlength="300">${SR ? `<button type="button" class="btn ghost mic ${ui.listening ? 'on' : ''}" data-act="mic" aria-label="Speak your question">🎤</button>` : ''}<button class="btn primary" aria-label="Send">➤</button></form></section>`;
   }
   function ask(q) {
     lastQ = q.toLowerCase();
@@ -589,6 +597,10 @@
       switch (a) {
         case 'theme': ui.theme = ui.theme === 'dark' ? 'light' : 'dark'; try { localStorage.setItem('rewind-theme', ui.theme); } catch (x) {} API.savePrefs({ theme: ui.theme }); break;
         case 'menu': ui.menu = !ui.menu; break;
+        case 'speak': return speak(v);
+        case 'share': return shareStatus(v);
+        case 'mic': return listen();
+        case 'install': ui.menu = false; installEvt.prompt(); installEvt.userChoice.then(c => { if (c.outcome === 'accepted') toast('Installed. Open returnease from your home screen.', 'good'); installEvt = null; render(); }); break;
         case 'info': ui.info = !ui.info; break;
         case 'wf': ui.wf = v; break;
         case 'enter': return enterApp();
@@ -658,6 +670,50 @@
   window.addEventListener('hashchange', () => { ui.menu = false; { const m = location.hash.match(/^#\/reviews\/(\w+)/); ui.revOpen = m ? m[1] : undefined; ui.revForm = null; } if (!location.hash.startsWith('#/start/')) ui.wiz = ui.wiz && location.hash.startsWith('#/start') ? null : ui.wiz; render(); window.scrollTo(0, 0); });
   window.addEventListener('offline', () => { if (st) { st.faults.offline = true; render(); } });
   window.addEventListener('online', () => { if (st && st.faults.offline) { injectFault('offline'); save(); render(); } });
+
+  // ---------------------------------------------------------------- round 2: voice, share, proof photos, install
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const LOCALE = { en: 'en-IN', hi: 'hi-IN', te: 'te-IN', ta: 'ta-IN', kn: 'kn-IN', ml: 'ml-IN', mr: 'mr-IN', bn: 'bn-IN' };
+  let installEvt = null;
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; });
+  function statusText(id) { const h = headline(id), it = itemOf(id); return `${it.name}. ${h.msg} ${h.why || ''}`.replace(/<[^>]+>/g, ''); }
+  function speak(id) {
+    if (!('speechSynthesis' in window)) { toast('Read aloud is not supported in this browser.', 'bad'); return; }
+    speechSynthesis.cancel();
+    if (ui.speaking === id) { ui.speaking = null; render(); return; }
+    const u = new SpeechSynthesisUtterance(statusText(id)); u.lang = LOCALE[ui.lang] || 'en-IN'; u.rate = .95;
+    const v = speechSynthesis.getVoices().find(x => x.lang === u.lang); if (v) u.voice = v;
+    u.onend = u.onerror = () => { ui.speaking = null; render(); };
+    ui.speaking = id; speechSynthesis.speak(u); render();
+  }
+  async function shareStatus(id) {
+    const a = allocFor(id), text = `returnease · ${statusText(id).split('. ').slice(0, 2).join('. ')}. Refund ${inr(a.total)}.`, url = location.origin + location.pathname;
+    log('customer', 'STATUS_SHARED', { item: id }); save();
+    if (navigator.share) { try { await navigator.share({ title: 'My return', text, url }); } catch (x) {} return; }
+    window.open('https://wa.me/?text=' + encodeURIComponent(text + ' ' + url), '_blank', 'noopener');
+  }
+  function listen() {
+    if (!SR) return;
+    const r = new SR(); r.lang = LOCALE[ui.lang] || 'en-IN'; r.interimResults = false; r.maxAlternatives = 1;
+    r.onresult = e => { ui.listening = false; const q = e.results[0][0].transcript; if (q) ask(q); };
+    r.onerror = e => { ui.listening = false; toast(e.error === 'not-allowed' ? 'Allow the microphone to speak your question.' : 'Didn’t catch that. Try again or type.', 'bad'); render(); };
+    r.onend = () => { if (ui.listening) { ui.listening = false; render(); } };
+    ui.listening = true; render(); r.start();
+  }
+  async function hashBytes(buf, fallback) {
+    try { const d = await crypto.subtle.digest('SHA-256', buf); return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join(''); } catch (x) { return sha256(fallback); }
+  }
+  async function addPhoto(id, file) {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = URL.createObjectURL(file); });
+    const k = Math.min(1, 640 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+    c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    const url = c.toDataURL('image/jpeg', .72), hash = await hashBytes(new TextEncoder().encode(url), url);
+    st.photos = st.photos || {}; (st.photos[id] = st.photos[id] || []).push({ at: new Date().toISOString(), url, hash });
+    if (st.photos[id].length > 4) st.photos[id].shift();
+    log('customer', 'HANDOVER_PHOTO', { item: id, sha256: hash }); save(); toast('Photo saved with its fingerprint in the audit log.', 'good'); render();
+  }
+  document.addEventListener('change', e => { const id = e.target.dataset && e.target.dataset.photo; if (id && e.target.files[0]) addPhoto(id, e.target.files[0]).catch(() => toast('Couldn’t read that photo.', 'bad')); });
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 
   function enterApp() {
     if (!ui.splash || ui.splashLeaving) return;

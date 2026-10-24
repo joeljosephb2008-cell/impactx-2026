@@ -39,3 +39,9 @@ Built with help from Claude (AI assistant), as the rules allow. The team reviewe
 
 ## Backend
 Supabase (Mumbai region): email/password accounts, per-user saved return state, reviews and chat log. Every table has Row Level Security so users only see their own rows. If the backend is unreachable the app falls back to an on-device account so the demo never stops.
+
+## Added in round 2
+- **Installable app (PWA):** add to home screen; the app shell works offline (`manifest.webmanifest`, `sw.js`).
+- **Voice:** speak your question to the assistant (Web Speech API, in the selected Indian language); **Read aloud** on every item status.
+- **Handover proof photos:** camera capture on each item; each photo is stored with its time and SHA-256 fingerprint in the audit chain.
+- **Share status:** one tap via the phone's share sheet, or WhatsApp on laptops.

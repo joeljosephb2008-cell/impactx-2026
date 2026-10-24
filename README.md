@@ -45,3 +45,6 @@ Supabase (Mumbai region): email/password accounts, per-user saved return state, 
 - **Voice:** speak your question to the assistant (Web Speech API, in the selected Indian language); **Read aloud** on every item status.
 - **Handover proof photos:** camera capture on each item; each photo is stored with its time and SHA-256 fingerprint in the audit chain.
 - **Share status:** one tap via the phone's share sheet, or WhatsApp on laptops.
+- **Remind me:** adds the expected refund or inspection date to your phone calendar (.ics).
+- **Receipt:** prints or saves a clean refund receipt as PDF.
+- **Bigger text:** account menu → Bigger text (remembered on this device).

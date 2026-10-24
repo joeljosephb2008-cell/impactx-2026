@@ -15,6 +15,7 @@
 
   // ---------------------------------------------------------------- UI state (not saved)
   const ui = { lang: 'en', theme: 'light', user: null, name: '', chat: [], chatOpen: false, tests: null, reviews: [], saving: '', wiz: null, menu: false, authTab: 'in', authErr: '', splash: true, reports: [] };
+  try { ui.big = localStorage.getItem('rewind-big') === '1'; document.documentElement.dataset.big = ui.big ? '1' : ''; } catch (e) {}
   try { ui.lang = localStorage.getItem('rewind-lang') || 'en'; ui.theme = localStorage.getItem('rewind-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); } catch (e) {}
   const t = k => (STR[ui.lang] && STR[ui.lang][k]) || STR.en[k] || k;
 
@@ -138,7 +139,7 @@
         ${ui.user ? `<button class="avatar" data-act="menu" aria-label="Account menu" aria-expanded="${ui.menu}">${esc((ui.name || 'U')[0].toUpperCase())}</button>` : ''}
       </div>
       ${ui.menu ? `<div class="menu" role="menu"><div class="menu-h"><b>${esc(ui.name)}</b><small>${esc(ui.user.email)}</small><small id="saved">${API.mode === 'cloud' ? '☁︎ Cloud account' : '● This-device account (offline mode)'}</small></div>
-        <a href="#/reviews" role="menuitem">⭐ ${t('reviews')}</a><a href="#/judge" role="menuitem">🧪 ${t('judges')}</a>${installEvt ? '<button data-act="install" role="menuitem">⬇ Install app</button>' : ''}<button data-act="signout" role="menuitem">↪ ${t('signout')}</button></div>` : ''}
+        <a href="#/reviews" role="menuitem">⭐ ${t('reviews')}</a><a href="#/judge" role="menuitem">🧪 ${t('judges')}</a>${installEvt ? '<button data-act="install" role="menuitem">⬇ Install app</button>' : ''}<button data-act="bigtext" role="menuitem">Aa ${ui.big ? 'Normal text' : 'Bigger text'}</button><button data-act="signout" role="menuitem">↪ ${t('signout')}</button></div>` : ''}
     </header>`;
   }
   const TABS = [['home', 'home', 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z'], ['tracking', 'track_title', 'M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z'], ['start', 'new_return', 'M12 5v14M5 12h14'], ['reviews', 'reviews', 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z'], ['report', 'report_tab', 'M12 3l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6zM12 8v5M12 16v.5']];
@@ -309,7 +310,7 @@
     if (r.demo && E.current(r.item).state !== 'CLOSED' && p.idx < 4 && !(r.option !== 'refund' && p.idx >= 2)) action = `<section class="panel rise"><button class="btn ghost" data-act="advance" data-v="${id}">Demo: move to next step →</button><p class="small muted">Simulates the courier, warehouse and bank updates.</p></section>`;
     return `<section class="item-hero rise" style="--c:${it.color}"><div class="ih-emoji">${pic(id)}</div><div><h1>${esc(it.name)}</h1><p class="muted">${esc(it.seller)} · ${pill(p.status)}</p></div></section>
       <section class="panel status rise"><p class="status-msg">${esc(h.msg)}</p>
-        <div class="tools"><button class="btn ghost sm" data-act="speak" data-v="${id}" aria-pressed="${ui.speaking === id}">${ui.speaking === id ? '■ Stop' : '🔊 Read aloud'}</button><button class="btn ghost sm" data-act="share" data-v="${id}">↗ Share status</button></div>
+        <div class="st-tools"><button class="btn ghost sm" data-act="speak" data-v="${id}" aria-pressed="${ui.speaking === id}">${ui.speaking === id ? '■ Stop' : '🔊 Read aloud'}</button><button class="btn ghost sm" data-act="share" data-v="${id}">↗ Share status</button>${dueOf(id) ? `<button class="btn ghost sm" data-act="remind" data-v="${id}">📅 Remind me</button>` : ''}<button class="btn ghost sm" data-act="receipt" data-v="${id}">🧾 Receipt</button></div>
         <details class="why"><summary>${t('why')}</summary><p>${esc(h.why)}</p><div class="chips"><span class="chip c-${h.conf}">Confidence: ${h.conf}</span><span class="chip">Source: ${esc(h.src)}</span><span class="chip">As of ${when(h.at)}${h.stale ? ' (old data)' : ''}</span></div>
         <button class="btn ghost sm" data-act="report" data-v="${id}">${t('report')}</button></details></section>
       ${action}
@@ -598,6 +599,9 @@
         case 'theme': ui.theme = ui.theme === 'dark' ? 'light' : 'dark'; try { localStorage.setItem('rewind-theme', ui.theme); } catch (x) {} API.savePrefs({ theme: ui.theme }); break;
         case 'menu': ui.menu = !ui.menu; break;
         case 'speak': return speak(v);
+        case 'remind': return remind(v);
+        case 'receipt': log('customer', 'RECEIPT_PRINTED', { item: v }); save(); setTimeout(() => window.print(), 50); return;
+        case 'bigtext': ui.big = !ui.big; ui.menu = false; document.documentElement.dataset.big = ui.big ? '1' : ''; try { localStorage.setItem('rewind-big', ui.big ? '1' : ''); } catch (x) {} toast(ui.big ? 'Bigger text on.' : 'Normal text.', 'good'); break;
         case 'share': return shareStatus(v);
         case 'mic': return listen();
         case 'install': ui.menu = false; installEvt.prompt(); installEvt.userChoice.then(c => { if (c.outcome === 'accepted') toast('Installed. Open returnease from your home screen.', 'good'); installEvt = null; render(); }); break;
@@ -676,6 +680,19 @@
   const LOCALE = { en: 'en-IN', hi: 'hi-IN', te: 'te-IN', ta: 'ta-IN', kn: 'kn-IN', ml: 'ml-IN', mr: 'mr-IN', bn: 'bn-IN' };
   let installEvt = null;
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; });
+  // next date the customer should expect something: inspection deadline or the latest refund-arrival date
+  function dueOf(id) {
+    const r = rec(id), p = progress(id);
+    if (p.status === 'hold' && r.inspection) return { at: E.addDays(r.inspection.openedAt, r.inspection.slaHours / 24), what: 'Inspection decision due' };
+    const pend = p.legs.filter(l => l.state !== 'CREDITED_CONFIRMED').map(l => { const s = srcFor(l), ty = payOf(orderOf(id), l.pm).type; return s.provider && s.provider.at ? E.addDays(s.provider.at, E.EXPECTED[ty].creditMax) : null; }).filter(Boolean).sort();
+    return pend.length ? { at: pend[pend.length - 1], what: 'Refund should reach your account' } : null;
+  }
+  function remind(id) {
+    const d = dueOf(id); if (!d) return; const it = itemOf(id), ymd = d.at.slice(0, 10).replace(/-/g, '');
+    const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//returnease//EN', 'BEGIN:VEVENT', 'UID:' + id + '-' + ymd + '@returnease', 'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z', 'DTSTART;VALUE=DATE:' + ymd, 'SUMMARY:returnease: ' + d.what + ' (' + it.short + ')', 'DESCRIPTION:Open returnease to check. If it has not arrived\\, tap Report a problem.', 'BEGIN:VALARM', 'TRIGGER:-PT9H', 'ACTION:DISPLAY', 'DESCRIPTION:Check your refund', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' })); a.download = 'returnease-' + id + '.ics'; document.body.appendChild(a); a.click(); a.remove();
+    log('customer', 'REMINDER_ADDED', { item: id, date: d.at.slice(0, 10) }); save(); toast(`Reminder for ${day(d.at)} added. Open the file to save it to your calendar.`, 'good');
+  }
   function statusText(id) { const h = headline(id), it = itemOf(id); return `${it.name}. ${h.msg} ${h.why || ''}`.replace(/<[^>]+>/g, ''); }
   function speak(id) {
     if (!('speechSynthesis' in window)) { toast('Read aloud is not supported in this browser.', 'bad'); return; }

@@ -452,7 +452,7 @@ main.page-in { animation: pagein .45s var(--ease) both; }
   .pick > .pill { margin-left: calc(52px + .9rem); }
 }
 /* round 2: status tools, proof photos, mic */
-.tools { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .8rem; }
+.st-tools { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .8rem; }
 .proof .row h3 { margin: 0; }
 .cam { position: relative; cursor: pointer; }
 .proof-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: .6rem; margin-top: .7rem; }
@@ -464,3 +464,12 @@ main.page-in { animation: pagein .45s var(--ease) both; }
 .mic.on { background: var(--tomato); color: #fff; animation: micpulse 1.1s ease-in-out infinite; }
 @keyframes micpulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 77, 46, .45); } 50% { box-shadow: 0 0 0 10px rgba(255, 77, 46, 0); } }
 @media (prefers-reduced-motion: reduce) { .mic.on { animation: none; } }
+/* bigger text (accessibility) */
+html[data-big="1"] main { zoom: 1.15; }
+/* receipt: print just the item page */
+@media print {
+  header, .tabbar, .fab, .chat, .st-tools, .proof:not(:has(img)), .toasts, .proof .cam, .why button, .rate-cta, .panel .btn { display: none !important; }
+  body { background: #fff !important; color: #000 !important; }
+  .panel, .item-hero { box-shadow: none !important; border: 1px solid #ccc !important; break-inside: avoid; }
+  main::before { content: "returnease · refund receipt · Simulated order, for demo"; display: block; font-weight: 800; margin-bottom: 1rem; }
+}

@@ -1,45 +1,26 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#FF5A1F">
-  <meta name="description" content="ReturnEase by Sleepy Coders: item-level returns and refunds with three-source reconciliation. IMPACTX 2026, Challenge 15. Simulated data.">
-  <title>ReturnEase · Sleepy Coders</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#16131F">
+  <meta name="description" content="ReturnEase by Team Sleepy Coders: item-level returns and refunds you can follow. IMPACTX 2026 Challenge 15. Simulated orders and payments.">
+  <title>returnease · returns that just work</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 48 48%27%3E%3Crect width=%2748%27 height=%2748%27 rx=%2712%27 fill=%27%2316131F%27/%3E%3Ctext x=%2724%27 y=%2734%27 text-anchor=%27middle%27 font-family=%27Arial%27 font-weight=%27900%27 font-size=%2730%27 fill=%27%23FF4D2E%27%3Er%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/styles.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='2' y='2' width='28' height='28' rx='6' fill='%23FF5A1F' stroke='%2314141F' stroke-width='3'/><path d='M11 13l-4 4 4 4M7 17h13a5 5 0 000-10h-3' stroke='%2314141F' stroke-width='3' fill='none' stroke-linecap='round'/></svg>">
+  <script>try{var th=localStorage.getItem('rewind-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=th;}catch(e){}</script>
 </head>
 <body>
-  <a class="skip" href="#main">Skip to content</a>
-  <p id="sim" class="sim" role="note">SIMULATED DATA</p>
-  <header class="top">
-    <div class="brand"><span class="logo" aria-hidden="true">↩</span><div><strong>ReturnEase</strong><span id="tag" class="tag"></span></div></div>
-    <div class="tools">
-      <label class="sr-only" for="set-lang">Language</label>
-      <select id="set-lang"><option value="en">English</option><option value="te">తెలుగు</option><option value="hi">हिन्दी</option></select>
-      <label class="tgl"><input type="checkbox" id="set-big"> A+</label>
-      <label class="tgl"><input type="checkbox" id="set-hc"> HC</label>
-      <button id="btn-read" class="icon" aria-label="Read aloud">🔊</button>
-      <button id="btn-reset" class="icon" aria-label="Reset demo">↺</button>
-    </div>
-  </header>
-  <nav class="tabs" role="tablist" aria-label="Sections">
-    <button role="tab" data-nav="return">My return</button>
-    <button role="tab" data-nav="money">Money</button>
-    <button role="tab" data-nav="before">Before you return</button>
-    <button role="tab" data-nav="trust">Fairness</button>
-    <button role="tab" data-nav="judge">Judge console</button>
-  </nav>
-  <p id="offline" class="offline" role="status" hidden></p>
-  <main id="main" tabindex="-1"></main>
-  <footer class="foot">ReturnEase · Team Sleepy Coders · IMPACTX 2026 Challenge 15 · Simulated payment and logistics states</footer>
+  <div id="app"><p style="padding:2rem;text-align:center">Loading ReturnEase…</p></div>
   <div id="toasts" class="toasts"></div>
-  <div id="live" class="sr-only" aria-live="polite"></div>
+  <div id="live" class="sr" aria-live="polite"></div>
+  <noscript>ReturnEase needs JavaScript.</noscript>
   <script src="js/sha256.js"></script>
   <script src="js/engine.js"></script>
   <script src="js/scenario.js"></script>
   <script src="js/tests.js"></script>
   <script src="js/i18n.js"></script>
-  <script src="js/ui.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>

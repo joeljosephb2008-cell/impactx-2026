@@ -85,7 +85,25 @@
     },
   };
 
-  const STOCK = { A: { otherSize: { size: 'size 10', qty: 3, days: 2, priceDiff: 0 }, same: { qty: 5, days: 2 } } };
+  const STOCK = {
+    A: { otherSize: { size: 'size 10', qty: 3, days: 2, priceDiff: 0 }, same: { qty: 5, days: 2 } },
+    W: { otherSize: { size: 'large strap', qty: 0, days: 0, priceDiff: 0 }, same: { qty: 4, days: 3 } },
+    S: { otherSize: { size: 'king size', qty: 6, days: 3, priceDiff: 30000 }, same: { qty: 9, days: 3 } },
+  };
+
+  // A second, recent order so a brand-new return can be started live in the demo.
+  const ORDER2 = {
+    id: 'OD-78811', placedAt: '2026-10-18T06:00:00.000Z', deliveredAt: '2026-10-21T10:00:00.000Z',
+    coupon: null,
+    payments: [{ id: 'pm-upi', type: 'upi', label: 'UPI lakshmi@okbank', amount: 589800 }],
+    items: [
+      { id: 'W', name: 'Smart watch, 44 mm', short: 'Watch', sellerId: 'S4', seller: 'TimeKart', category: 'ELECTRONICS', price: 499900, color: '#5B8CFF', emoji: '⌚' },
+      { id: 'S', name: 'Cotton bedsheet, double', short: 'Bedsheet', sellerId: 'S2', seller: 'Handloom Hub', category: 'HOME', price: 89900, color: '#3DDC97', emoji: '🛏️' },
+    ],
+  };
+  POLICIES.categories.ELECTRONICS = { id: 'P-EL-7', label: 'Electronics', windowDays: 7, condition: 'All accessories and box included.' };
+  POLICIES.categories.HOME = { id: 'P-HM-10', label: 'Home', windowDays: 10, condition: null };
+  const EMOJI = { A: '👟', B: '👘', C: '🎧', D: '🎁', W: '⌚', S: '🛏️' };
 
   // Seeded heavy returners for the fraud false-positive metric. legit=true means a human reviewer marked them genuine.
   const RETURNERS = [
@@ -133,5 +151,5 @@
     { risk: 'Rewriting history to deny a claim', mitigation: 'Append-only SHA-256 hash-chained audit log; any edit breaks verification.', test: 'T-AUDIT-1/2' },
   ];
 
-  g.Scenario = { NOW, POLICIES, CUSTOMER, ORDER, RETURN_ID, ATTEMPTS, ITEMS_IN_RETURN, STOCK, RETURNERS, DATA_CARD, THREATS };
+  g.Scenario = { NOW, POLICIES, CUSTOMER, ORDER, ORDER2, EMOJI, RETURN_ID, ATTEMPTS, ITEMS_IN_RETURN, STOCK, RETURNERS, DATA_CARD, THREATS };
 })(typeof window !== 'undefined' ? window : globalThis);

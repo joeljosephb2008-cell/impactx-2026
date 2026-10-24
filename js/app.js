@@ -14,7 +14,7 @@
   const payOf = (order, id) => order.payments.find(p => p.id === id);
 
   // ---------------------------------------------------------------- UI state (not saved)
-  const ui = { lang: 'en', theme: 'light', user: null, name: '', chat: [], chatOpen: false, tests: null, reviews: [], saving: '', wiz: null, menu: false, authTab: 'in', authErr: '' };
+  const ui = { lang: 'en', theme: 'light', user: null, name: '', chat: [], chatOpen: false, tests: null, reviews: [], saving: '', wiz: null, menu: false, authTab: 'in', authErr: '', splash: true, reports: [] };
   try { ui.lang = localStorage.getItem('rewind-lang') || 'en'; ui.theme = localStorage.getItem('rewind-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); } catch (e) {}
   const t = k => (STR[ui.lang] && STR[ui.lang][k]) || STR.en[k] || k;
 
@@ -90,7 +90,7 @@
   }
 
   // ---------------------------------------------------------------- graphics
-  const LOGO = `<span class="wordmark" aria-label="returnease">return<em>ease</em><i></i></span>`;
+  const LOGO = `<img src="img/wordmark.png" alt="returnease" class="wordmark-img" width="381" height="67">`;
   function heroArt() {
     return `<svg viewBox="0 0 360 150" class="hero-art" role="img" aria-label="A parcel travels from your home back to the store">
       <path id="route" d="M60 112 C 120 20, 230 150, 300 60" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="2 12" stroke-linecap="round" opacity=".55"/>
@@ -130,7 +130,7 @@
     const home = !route[0] || route[0] === 'home';
     return `<header class="top">
       ${home ? '' : `<button class="ico" data-go="back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`}
-      <a class="brand" href="#/home">${LOGO}<small class="tagl">${esc(t('tagline'))}</small></a>
+      <a class="brand" href="#/home">${LOGO}<small class="tagl">${esc(t('tag2'))}</small></a>
       <div class="tools">
         <label class="lang"><span aria-hidden="true">🌐</span><span class="sr">Language</span><select id="lang">${LANGS.map(([c, n]) => `<option value="${c}" ${c === ui.lang ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
         ${themeBtn()}
@@ -141,77 +141,71 @@
         <a href="#/reviews" role="menuitem">⭐ ${t('reviews')}</a><a href="#/judge" role="menuitem">🧪 ${t('judges')}</a><button data-act="signout" role="menuitem">↪ ${t('signout')}</button></div>` : ''}
     </header>`;
   }
+  const TABS = [['home', 'home', 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z'], ['tracking', 'track_title', 'M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z'], ['start', 'new_return', 'M12 5v14M5 12h14'], ['reviews', 'reviews', 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z'], ['report', 'report_tab', 'M12 3l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6zM12 8v5M12 16v.5']];
   function nav(route) {
-    const r = route[0] || 'home';
-    const b = (k, ic, label) => `<a href="#/${k}" class="${r === k ? 'on' : ''}"><span aria-hidden="true">${ic}</span>${esc(label)}</a>`;
-    return `<nav class="tabbar" aria-label="Main">${b('home', '⌂', t('home'))}${b('tracking', '📍', 'Track')}${b('start', '＋', t('new_return'))}${b('reviews', '★', t('reviews'))}</nav>
-      <button class="fab ${ui.chatOpen ? 'open' : ''}" data-act="chat" aria-label="${esc(t('chat_title'))}"><span>💬</span></button>${ui.chatOpen ? chatPanel() : ''}`;
+    const r = route[0] || 'home', idx = Math.max(0, TABS.findIndex(x => x[0] === r));
+    const onTab = TABS.some(x => x[0] === r);
+    return `<nav class="tabbar" aria-label="Main" style="--i:${idx};--n:${TABS.length}"><span class="tab-pill ${onTab ? '' : 'hide'}" aria-hidden="true"></span>${TABS.map(([k, label, d]) => `<a href="#/${k}" class="${r === k ? 'on' : ''}" ${r === k ? 'aria-current="page"' : ''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>${esc(label === 'track_title' ? t('p_tracking') : t(label))}</span></a>`).join('')}</nav>
+      <button class="fab ${ui.chatOpen ? 'open' : ''}" data-act="chat" aria-label="${esc(t('chat_title'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="9" cy="10.5" r="1.2" fill="currentColor"/><circle cx="12" cy="10.5" r="1.2" fill="currentColor"/><circle cx="15" cy="10.5" r="1.2" fill="currentColor"/></svg></button>${ui.chatOpen ? chatPanel() : ''}`;
   }
 
+  let lastRoute = '';
   function render() {
     document.documentElement.dataset.theme = ui.theme;
     document.documentElement.lang = ui.lang;
     const route = (location.hash.replace(/^#\/?/, '') || 'home').split('/');
     const infoBtn = ui.info ? infoModal() : '';
-    if (!ui.user) { $('#app').innerHTML = authView() + infoBtn; return; }
-    const views = { home: vHome, item: vItem, start: vStart, reviews: vReviews, judge: vJudge, tracking: vTracking, exchange: vExchange, checkout: vCheckout, shipping: vShipping };
+    if (!ui.user) { $('#app').innerHTML = (ui.splash ? splash() : '') + authView() + infoBtn; return; }
+    const views = { home: vHome, item: vItem, start: vStart, reviews: vReviews, judge: vJudge, tracking: vTracking, exchange: vExchange, checkout: vCheckout, shipping: vShipping, report: vReport };
     const v = views[route[0]] || vHome;
-    $('#app').innerHTML = header(route) + `${st.faults.offline ? '<p class="offline" role="status">You’re offline. Showing saved data; actions are queued and sent once when you’re back.</p>' : ''}<main id="main" tabindex="-1" class="${route[0] === 'judge' ? 'wide' : ''}">${v(route)}</main>` + nav(route) + infoBtn;
+    const changed = route.join('/') !== lastRoute; lastRoute = route.join('/');
+    $('#app').innerHTML = header(route) + `${st.faults.offline ? '<p class="offline" role="status">You’re offline. Showing saved data; actions are queued and sent once when you’re back.</p>' : ''}<main id="main" tabindex="-1" class="${route[0] === 'judge' ? 'wide' : ''} ${changed ? 'page-in' : ''}">${v(route)}</main>` + nav(route) + infoBtn;
     countUp();
     const cl = $('#chatlog'); if (cl) cl.scrollTop = cl.scrollHeight;
   }
 
-  // ---------------------------------------------------------------- LANDING (public) + AUTH
-  const PRODUCTS = [
-    ['tracking', '📍', 'Tracking', 'Every item on its own live track. Failed pickups and holds are shown, never hidden.', 'var(--sky)'],
-    ['start', '↩️', 'Returns', 'Know if you can return before you ask. Refund split explained to the paisa.', 'var(--tomato)'],
-    ['exchange', '🔁', 'Exchange', 'Wrong size? Swap it in the same pickup. No money stuck in limbo.', 'var(--grape)'],
-    ['checkout', '🛒', 'Checkout', 'See the return rules for each item before you pay, not after.', 'var(--sun)'],
-    ['shipping', '🚚', 'Shipping', 'Live parcel journey, drop-off QR and proof of handover with photos.', 'var(--mint)'],
-  ];
+  // ---------------------------------------------------------------- SPLASH + LANDING (public) + AUTH
+  const PRODUCTS = [['tracking', 'var(--sky)'], ['start', 'var(--tomato)'], ['exchange', 'var(--grape)'], ['checkout', 'var(--sun)'], ['shipping', 'var(--mint)'], ['report', '#E5383B']];
+  const PKEY = { tracking: 'p_tracking', start: 'p_returns', exchange: 'p_exchange', checkout: 'p_checkout', shipping: 'p_shipping', report: 'p_report' };
   const PARTNERS = ['DakDash Couriers', 'Swiftline Logistics', 'PayNest', 'UPIly', 'StrideCo', 'Handloom Hub', 'SoundBay', 'TimeKart', 'Kartvaan Express', 'ShopSetu'];
-  const FAQ = [
-    ['When will my refund reach me?', 'Each payment method has its own time: wallet and voucher right away, UPI 1–3 days, card 5–7 days after the item passes its check. ReturnEase shows the expected date for each part and flags it if it is late.'],
-    ['Why is my refund less than the price?', 'If you used a coupon on the whole order, each item carries a share of the discount by price. ReturnEase shows the exact maths, line by line.'],
-    ['I paid with card, wallet and a voucher. Where does the money go?', 'Back to where it came from, in the same proportion. The voucher part comes back as a voucher with at least 30 days of validity.'],
-    ['The courier said I was unreachable, but I was home.', 'We check the courier’s GPS and call records. A failed pickup never counts against you without evidence, and you can choose drop-off instead.'],
-    ['The warehouse says my item was used. What now?', 'Photos taken at handover are compared with the warehouse photos by a separate team within 72 hours. You get a full refund, a partial one with a reason, or the item back free.'],
-    ['Will I be blocked if I return a lot?', 'Not for honest returns. Lots of size returns that pass inspection are treated as normal. Any extra check can be appealed to a person.'],
-    ['Do you ever ask for OTP or PIN?', 'Never. Anyone asking for an OTP, PIN or card number “to process your refund” is a scammer. Report it at cybercrime.gov.in or call 1930.'],
-  ];
   function faqBlock() {
-    return `<section class="faq"><h2>Frequently asked questions</h2>${FAQ.map(([q, a]) => `<details class="faq-q"><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</section>`;
+    return `<section class="faq"><h2>${t('faq')}</h2>${[1, 2, 3, 4, 5, 6, 7].map(n => `<details class="faq-q"><summary>${esc(t('q' + n))}</summary><p>${esc(t('a' + n))}</p></details>`).join('')}</section>`;
   }
   function productsBlock(linked) {
-    return `<div class="products">${PRODUCTS.map(([k, ic, n, d, c], i) => `<${linked ? 'a href="#/' + k + '"' : 'a href="#signin"'} class="product rise" style="--c:${c};animation-delay:${i * .07}s"><span class="p-ic">${ic}</span><b>${n}</b><small>${esc(d)}</small><span class="p-go">→</span></a>`).join('')}</div>`;
+    return `<div class="products">${PRODUCTS.map(([k, c], i) => `<a href="${linked ? '#/' + k : '#signin'}" class="product rise" style="--c:${c};animation-delay:${i * .07}s"><span class="p-art">${ART.product(k)}</span><b>${esc(t(PKEY[k]))}</b><small>${esc(t(PKEY[k] + '_d'))}</small><span class="p-go">→</span></a>`).join('')}</div>`;
   }
   function partnersBlock() {
     const row = PARTNERS.map(p => `<span>${esc(p)}</span>`).join('');
-    return `<section class="partners"><p class="muted small">Works with couriers, payment apps and sellers <i>(sample partner names, fictional)</i></p><div class="marquee"><div class="track">${row}${row}</div></div></section>`;
+    return `<section class="partners"><p class="muted small">${esc(t('partners'))}</p><div class="marquee"><div class="track">${row}${row}</div></div></section>`;
   }
   function howBlock() {
-    const steps = [['🔎', 'Check', 'See what you can return and how much comes back, before you ask.'], ['📦', 'Hand over', 'Pickup or drop-off with timestamped photos and a receipt.'], ['🧾', 'Reconcile', 'Store, bank and seller records compared: waiting, stuck or done.'], ['💸', 'Get paid', 'Each part of your money tracked until it is confirmed in your account.']];
-    return `<div class="how">${steps.map(([e, h, d], i) => `<div class="how-s rise" style="animation-delay:${i * .1}s"><span class="how-n">${i + 1}</span><span class="how-e">${e}</span><b>${h}</b><small>${esc(d)}</small></div>`).join('')}</div>`;
+    const steps = [['Check', 'See what you can return and how much comes back, before you ask.'], ['Hand over', 'Pickup or drop-off with timestamped photos and a receipt.'], ['Reconcile', 'Store, bank and seller records compared: waiting, stuck or done.'], ['Get paid', 'Each part of your money tracked until it is confirmed in your account.']];
+    return `<div class="how">${steps.map(([h, d], i) => `<div class="how-s rise" style="animation-delay:${i * .1}s"><span class="how-n">${i + 1}</span><b>${h}</b><small>${esc(d)}</small></div>`).join('')}</div>`;
   }
   function infoModal() {
-    return `<div class="modal" role="dialog" aria-modal="true" aria-label="How ReturnEase works"><div class="modal-card"><button class="ico close" data-act="info" aria-label="Close">✕</button>
-      <h2>ⓘ How ReturnEase works</h2>${howBlock()}
+    return `<div class="modal" role="dialog" aria-modal="true" aria-label="How returnease works"><div class="modal-card"><button class="ico close" data-act="info" aria-label="Close">✕</button>
+      <h2>ⓘ How returnease works</h2>${howBlock()}
       <ul class="small"><li>Logistics and money are tracked as separate steps, so “approved” never pretends to be “paid”.</li><li>Every status shows why, how sure we are, the source, and when it was updated, plus a button to report a problem.</li><li>All data in this prototype is simulated and labelled.</li></ul>
       <p class="hint">Judges: sign in with <b>judge@returnease.demo</b> / <b>Impactx@2026</b>. Account menu → <b>For judges</b> has fault injection, tests and the audit trail.</p></div></div>`;
   }
+  function splash() {
+    return `<section class="splash ${ui.splashLeaving ? 'leaving' : ''}" id="splash" aria-label="${esc(t('welcome'))} returnease">
+      <div class="sp-orb o1"></div><div class="sp-orb o2"></div><div class="sp-orb o3"></div>
+      <div class="sp-center"><p class="sp-welcome">${esc(t('welcome'))}</p><img src="img/wordmark.png" alt="returnease" class="sp-logo"><p class="sp-tag">${esc(t('tag2'))}</p></div>
+      <div class="sp-lang"><label class="lang"><span class="sr">Language</span><select id="lang">${LANGS.map(([c, n]) => `<option value="${c}" ${c === ui.lang ? 'selected' : ''}>${n}</option>`).join('')}</select></label></div>
+      <button class="sp-swipe" data-act="enter"><span class="chev"></span><span class="chev"></span>${esc(t('swipe'))}</button></section>`;
+  }
   function landing() {
-    return `<header class="top"><a class="brand" href="#/">${LOGO}<small class="tagl">${esc(t('tagline'))}</small></a><div class="tools">
+    return `<header class="top"><a class="brand" href="#/">${LOGO}<small class="tagl">${esc(t('tag2'))}</small></a><div class="tools">
       <label class="lang"><span aria-hidden="true">🌐</span><span class="sr">Language</span><select id="lang">${LANGS.map(([c, n]) => `<option value="${c}" ${c === ui.lang ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
-      ${themeBtn()}<button class="ico info-i" data-act="info" aria-label="How this works">i</button><a class="btn primary sm" href="#signin">${t('signin')}</a></div></header>
+      ${themeBtn()}<button class="ico info-i" data-act="info" aria-label="How this works">i</button></div></header>
       <main class="landing">
-      <section class="l-hero"><div class="rise"><p class="eyebrow dark">IMPACTX 2026 · Team Sleepy Coders</p><h1 class="l-h1">Returns that <span class="grad">just work</span>.</h1>
-        <p class="l-sub">Track every item, see every rupee of your refund, and fix courier or inspection disputes in a tap. In 8 Indian languages.</p>
-        <div class="row wrap-ok"><a class="btn primary big" href="#signin">Try the live demo →</a><button class="btn big" data-act="info">ⓘ How it works</button></div></div>
-        <div class="l-art rise">${heroArt()}<div class="float-card fc1">✓ ₹168.75 wallet refund arrived</div><div class="float-card fc2">⏳ Card ₹750 · by 29 Oct</div><div class="float-card fc3">🔒 We never ask for OTP</div></div></section>
-      <section id="products"><h2>Products</h2>${productsBlock(false)}</section>
-      <section><h2>How it works</h2>${howBlock()}</section>
+      <section class="l-hero sheet-up" id="signin"><div class="rise"><p class="eyebrow dark">IMPACTX 2026 · Team Sleepy Coders</p><h1 class="l-h1"><span class="grad">${esc(t('tag2'))}</span></h1>
+        <p class="l-sub">${esc(t('hero_sub'))}</p>
+        <div class="l-art">${heroArt()}<div class="float-card fc1">✓ ₹168.75 wallet</div><div class="float-card fc2">⏳ ₹750 · 29 Oct</div><div class="float-card fc3">🔒 No OTP. Ever.</div></div></div>
+        <div class="auth-wrap">${authForm()}</div></section>
+      <section id="products"><h2>${t('products')}</h2>${productsBlock(false)}</section>
       ${partnersBlock()}
-      <section class="auth-wrap" id="signin">${authForm()}</section>
       ${faqBlock()}
       <footer class="foot">${LOGO}<span>· Team Sleepy Coders (B Joel, Sameer SK, Tejasvi G, Nikitha V) · IMPACTX 2026 Challenge 15 · Simulated data</span></footer></main>`;
   }
@@ -221,12 +215,14 @@
     const up = ui.authTab === 'up';
     return `<form class="auth-card" id="authform" novalidate>
         <div class="seg" role="tablist"><button type="button" role="tab" aria-selected="${!up}" data-act="authtab" data-v="in">${t('signin')}</button><button type="button" role="tab" aria-selected="${up}" data-act="authtab" data-v="up">${t('signup')}</button></div>
+        <button type="button" class="btn google big" data-act="google"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.3-1.6 3.8-5.5 3.8-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.2.8 3.9 1.5l2.7-2.6C16.9 3 14.7 2 12 2 6.5 2 2 6.5 2 12s4.5 10 10 10c5.8 0 9.6-4.1 9.6-9.8 0-.7-.1-1.2-.2-1.7H12z"/></svg>${t('google')}</button>
+        <div class="or"><span>${t('or')}</span></div>
         ${up ? `<label>${t('name')}<input name="name" autocomplete="name" required maxlength="60"></label>` : ''}
         <label>${t('email')}<input name="email" type="email" autocomplete="email" required value="${up ? '' : 'judge@returnease.demo'}"></label>
         <label>${t('password')}<input name="password" type="password" autocomplete="${up ? 'new-password' : 'current-password'}" required minlength="6" value="${up ? '' : 'Impactx@2026'}"></label>
         ${ui.authErr ? `<p class="err" role="alert">${esc(ui.authErr)}</p>` : ''}
         <button class="btn primary big" id="authbtn">${up ? t('signup') : t('signin')} →</button>
-        <p class="hint">Judges: <b>judge@returnease.demo</b> / <b>Impactx@2026</b> (pre-filled). New accounts get their own copy of the demo order.</p>
+        <p class="hint">Judges: <b>judge@returnease.demo</b> / <b>Impactx@2026</b> (pre-filled).</p>
         <p class="sim-note">Prototype · simulated orders, couriers and payments</p>
       </form>`;
   }
@@ -235,9 +231,9 @@
     const prof = await API.profile(); ui.name = prof.name || 'Customer';
     st = (await API.loadState()) || seed();
     if (!st.v || st.v !== 3) st = seed();
-    save(); ui.reviews = await API.reviews();
+    save(); ui.reviews = await API.reviews(); ui.reports = await API.reports();
     ui.chat = [{ who: 'bot', html: `${t('hi')} ${esc(ui.name.split(' ')[0])}! I can show your refund, track an item, explain an amount, start a return or switch language. Try a button below.`, chips: ['Where is my money?', 'Track my shoes', 'Why less money?', 'Start a return'] }];
-    if (!location.hash || location.hash === '#/' || location.hash.startsWith('#/auth')) location.hash = '#/home';
+    if (!location.hash.startsWith('#/') || location.hash === '#/') location.hash = '#/home';
     render();
   }
 
@@ -245,7 +241,7 @@
   function retCard(id) {
     const it = itemOf(id), p = progress(id), h = headline(id);
     return `<a class="item-card rise" href="#/item/${id}" style="--c:${it.color}">
-      <div class="ic-emoji">${S.EMOJI[id]}</div>
+      <div class="ic-emoji">${ART.item(id)}</div>
       <div class="ic-body"><div class="row between"><b>${esc(it.name)}</b>${pill(p.status)}</div>
         <p class="ic-msg">${esc(h.msg)}</p>${miniTrack(p)}
         <div class="ic-steps"><span>${t('step_req')}</span><span>${t('step_arr')}</span></div></div></a>`;
@@ -263,11 +259,11 @@
         <p class="big-money"><span data-count="${tt.back}">₹0</span> <small>${t('back_so_far')} ${t('of')} ${inr(tt.total)}</small></p>
         <div class="bar"><i style="--w:${pct}%"></i></div>
         <p class="scam">🔒 ${esc(t('scam'))}</p></div>${heroArt()}</section>
+      <div class="cta-row"><a class="tile rise" href="#/start"><span class="t-ic">${ART.product('start')}</span><b>${t('start')}</b><small>${esc(t('tile_start_d'))}</small></a>
+      <a class="tile rise" href="#/reviews"><span class="t-ic stars-ic">★★★</span><b>${t('rate')}</b><small>${ui.reviews.length} ${esc(t('reviews_saved'))}</small></a>
+      <button class="tile rise" data-act="chat"><span class="t-ic chat-ic"><i></i><i></i><i></i></span><b>${t('need')}</b><small>${esc(t('chat_ph'))}</small></button></div>
       <h2>${t('items')}</h2><div class="cards">${['A', 'B'].map(retCard).join('')}${extra.map(retCard).join('')}</div>
-      <div class="cta-row"><a class="tile rise" href="#/start"><span>＋</span><b>${t('start')}</b><small>Check what you can return first</small></a>
-      <a class="tile rise" href="#/reviews"><span>★</span><b>${t('rate')}</b><small>${ui.reviews.length} review(s) saved</small></a>
-      <button class="tile rise" data-act="chat"><span>💬</span><b>${t('need')}</b><small>${esc(t('chat_ph'))}</small></button></div>
-      <h2>Products</h2>${productsBlock(true)}${faqBlock()}`;
+      <h2>${t('products')}</h2>${productsBlock(true)}${faqBlock()}`;
   }
 
   // ---------------------------------------------------------------- ITEM
@@ -305,7 +301,7 @@
       <p class="small">Review due <b>${when(E.addDays(r.inspection.openedAt, 3))}</b>. Possible outcomes: full refund, partial with reason, or not accepted (item sent back free).</p>
       <button class="btn primary" data-act="review" data-v="${id}">Demo: reviewer decides now</button></section>`;
     if (r.demo && E.current(r.item).state !== 'CLOSED' && p.idx < 4 && !(r.option !== 'refund' && p.idx >= 2)) action = `<section class="panel rise"><button class="btn ghost" data-act="advance" data-v="${id}">Demo: move to next step →</button><p class="small muted">Simulates the courier, warehouse and bank updates.</p></section>`;
-    return `<section class="item-hero rise" style="--c:${it.color}"><div class="ih-emoji">${S.EMOJI[id]}</div><div><h1>${esc(it.name)}</h1><p class="muted">${esc(it.seller)} · ${pill(p.status)}</p></div></section>
+    return `<section class="item-hero rise" style="--c:${it.color}"><div class="ih-emoji">${ART.item(id)}</div><div><h1>${esc(it.name)}</h1><p class="muted">${esc(it.seller)} · ${pill(p.status)}</p></div></section>
       <section class="panel status rise"><p class="status-msg">${esc(h.msg)}</p>
         <details class="why"><summary>${t('why')}</summary><p>${esc(h.why)}</p><div class="chips"><span class="chip c-${h.conf}">Confidence: ${h.conf}</span><span class="chip">Source: ${esc(h.src)}</span><span class="chip">As of ${when(h.at)}${h.stale ? ' (old data)' : ''}</span></div>
         <button class="btn ghost sm" data-act="report" data-v="${id}">${t('report')}</button></details></section>
@@ -332,12 +328,12 @@
         const cls = { ELIGIBLE: 'ok', CONDITIONAL: 'warn', NOT_ELIGIBLE: 'no', IN_RETURN: 'muted' }[e.status];
         const label = { ELIGIBLE: t('eligible'), CONDITIONAL: t('conditional'), NOT_ELIGIBLE: t('not_eligible'), IN_RETURN: '↩ ' + t('your_return') }[e.status];
         const can = e.status === 'ELIGIBLE' || e.status === 'CONDITIONAL';
-        return `<${can ? 'button' : 'div'} class="pick rise ${can ? '' : 'off'}" ${can ? `data-act="pick" data-v="${it.id}"` : ''} style="--c:${it.color}"><span class="pk-e">${S.EMOJI[it.id]}</span><span class="pk-b"><b>${esc(it.name)}</b><small>${esc(it.seller)} · ${inr(it.price)}</small><small class="why-l">${e.reasons.map(x => esc(x.text)).join(' · ')}</small></span><span class="pill p-${cls}">${esc(label)}</span></${can ? 'button' : 'div'}>`;
+        return `<${can ? 'button' : 'div'} class="pick rise ${can ? '' : 'off'}" ${can ? `data-act="pick" data-v="${it.id}"` : ''} style="--c:${it.color}"><span class="pk-e">${ART.item(it.id)}</span><span class="pk-b"><b>${esc(it.name)}</b><small>${esc(it.seller)} · ${inr(it.price)}</small><small class="why-l">${e.reasons.map(x => esc(x.text)).join(' · ')}</small></span><span class="pill p-${cls}">${esc(label)}</span></${can ? 'button' : 'div'}>`;
       })).join('');
       return `<h1>${t('start')}</h1><p class="muted">Every item is checked on its own: return window, condition, seller rules and free gifts, before you ask.</p><div class="picks">${rows}</div>`;
     }
     const it = itemOf(w.id), o = orderOf(w.id);
-    const head = `<div class="wiz-h"><span class="pk-e big">${S.EMOJI[w.id]}</span><div><b>${esc(it.name)}</b><div class="dots">${[1, 2, 3].map(n => `<i class="${n <= w.step ? 'on' : ''}"></i>`).join('')}</div></div></div>`;
+    const head = `<div class="wiz-h"><span class="pk-e big">${ART.item(w.id)}</span><div><b>${esc(it.name)}</b><div class="dots">${[1, 2, 3].map(n => `<i class="${n <= w.step ? 'on' : ''}"></i>`).join('')}</div></div></div>`;
     if (w.step === 1) return head + `<h2>${t('reason')}</h2><div class="reasons">${REASONS.map(([k, e, l]) => `<button class="reason ${w.reason === k ? 'on' : ''}" data-act="reason" data-v="${k}"><span>${e}</span>${l}</button>`).join('')}</div>`;
     if (w.step === 2) {
       const est = E.allocate(o, { items: [{ itemId: w.id }] }, { order: 'proportional', now: NOW });
@@ -357,28 +353,28 @@
   const allIds = () => ['A', 'B', ...st.extra.flatMap(r => Object.keys(r.items))];
   function bigTrack(id) {
     const p = progress(id), it = itemOf(id), steps = ['step_req', 'step_pick', 'step_check', 'step_sent', 'step_arr'];
-    return `<a class="track-card rise" href="#/item/${id}" style="--c:${it.color}"><div class="row between"><div class="row"><span class="pk-e">${S.EMOJI[id]}</span><div><b>${esc(it.name)}</b><small class="muted block">${esc(it.seller)}${p.fails ? ` · <span class="red">${p.fails} failed pickups, not your fault</span>` : ''}</small></div></div>${pill(p.status)}</div>
+    return `<a class="track-card rise" href="#/item/${id}" style="--c:${it.color}"><div class="row between"><div class="row"><span class="pk-e">${ART.item(id)}</span><div><b>${esc(it.name)}</b><small class="muted block">${esc(it.seller)}${p.fails ? ` · <span class="red">${p.fails} failed pickups, not your fault</span>` : ''}</small></div></div>${pill(p.status)}</div>
       <div class="bt">${steps.map((k, i) => `<div class="bt-s ${i < p.idx ? 'done' : i === p.idx ? 'now ' + p.status : ''}" style="--d:${i * .15}s"><i></i><span>${t(k)}</span></div>`).join('')}</div></a>`;
   }
   function vTracking() {
-    return `<h1>📍 Tracking</h1><p class="muted">Every item moves on its own line, even when they share one pickup.</p>${allIds().map(bigTrack).join('')}
-      <a class="tile rise" href="#/shipping"><span>🚚</span><b>Shipments and drop-off codes</b><small>Outgoing parcels, exchanges and handover proof</small></a>`;
+    return `<section class="p-hero rise" style="--c:var(--sky)"><span class="p-art big">${ART.product('tracking')}</span><div><h1>${esc(t('p_tracking'))}</h1><p class="muted">${esc(t('p_tracking_d'))}</p></div></section>${allIds().map(bigTrack).join('')}
+      <a class="tile rise" href="#/shipping"><span class="t-ic">${ART.product('shipping')}</span><b>Shipments and drop-off codes</b><small>Outgoing parcels, exchanges and handover proof</small></a>`;
   }
   function vExchange() {
     const ids = O2.items.map(i => i.id).filter(id => !rec(id));
-    return `<section class="p-hero rise" style="--c:var(--grape)"><span class="p-ic big">🔁</span><div><h1>Exchange, don’t wait</h1><p class="muted">Wrong size or colour? The new one comes with the pickup agent. No refund waiting, no new payment.</p></div></section>
+    return `<section class="p-hero rise" style="--c:var(--grape)"><span class="p-art big">${ART.product('exchange')}</span><div><h1>Exchange, don’t wait</h1><p class="muted">Wrong size or colour? The new one comes with the pickup agent. No refund waiting, no new payment.</p></div></section>
       <div class="how">${[['1', 'Pick the item'], ['2', 'Choose the new size'], ['3', 'Swap at your door']].map(([n, x], i) => `<div class="how-s rise" style="animation-delay:${i * .1}s"><span class="how-n">${n}</span><b>${x}</b></div>`).join('')}</div>
-      <h2>Items you can exchange</h2><div class="picks">${ids.length ? ids.map(id => { const it = itemOf(id), stock = S.STOCK[id]; return `<button class="pick rise" data-act="pickx" data-v="${id}" style="--c:${it.color}"><span class="pk-e">${S.EMOJI[id]}</span><span class="pk-b"><b>${esc(it.name)}</b><small>${stock.otherSize.qty ? `${stock.otherSize.qty} left in ${stock.otherSize.size}${stock.otherSize.priceDiff ? ' · pay ' + inr(stock.otherSize.priceDiff) + ' more' : ''}` : 'Other size out of stock: replacement or refund instead'}</small></span><span class="p-go">→</span></button>`; }).join('') : '<p class="muted">Nothing left to exchange right now.</p>'}</div>`;
+      <h2>Items you can exchange</h2><div class="picks">${ids.length ? ids.map(id => { const it = itemOf(id), stock = S.STOCK[id]; return `<button class="pick rise" data-act="pickx" data-v="${id}" style="--c:${it.color}"><span class="pk-e">${ART.item(id)}</span><span class="pk-b"><b>${esc(it.name)}</b><small>${stock.otherSize.qty ? `${stock.otherSize.qty} left in ${stock.otherSize.size}${stock.otherSize.priceDiff ? ' · pay ' + inr(stock.otherSize.priceDiff) + ' more' : ''}` : 'Other size out of stock: replacement or refund instead'}</small></span><span class="p-go">→</span></button>`; }).join('') : '<p class="muted">Nothing left to exchange right now.</p>'}</div>`;
   }
   const CART = [
-    { n: 'Yoga mat, 6 mm', e: '🧘', price: 129900, rule: ['ok', '10-day return · free pickup'] },
-    { n: 'Steel water bottle, 1 L', e: '🍶', price: 44900, rule: ['ok', '10-day return · exchange available'] },
-    { n: 'Face serum, 30 ml', e: '🧴', price: 69900, rule: ['no', 'Not returnable once opened (hygiene)'] },
+    { n: 'Yoga mat, 6 mm', e: 'M', price: 129900, rule: ['ok', '10-day return · free pickup'] },
+    { n: 'Steel water bottle, 1 L', e: 'K', price: 44900, rule: ['ok', '10-day return · exchange available'] },
+    { n: 'Face serum, 30 ml', e: 'R', price: 69900, rule: ['no', 'Not returnable once opened (hygiene)'] },
   ];
   function vCheckout() {
     const total = CART.reduce((s, c) => s + c.price, 0), pref = ui.refpref || 'original';
-    return `<section class="p-hero rise" style="--c:var(--sun)"><span class="p-ic big">🛒</span><div><h1>Checkout with no surprises</h1><p class="muted">Return rules for every item, shown before you pay. Demo cart, simulated payment.</p></div></section>
-      <div class="two"><section class="panel rise"><h3>Your cart</h3>${CART.map(c => `<div class="cart-row"><span class="pk-e">${c.e}</span><div><b>${esc(c.n)}</b><span class="pill p-${c.rule[0]}">${esc(c.rule[1])}</span></div><b>${inr(c.price)}</b></div>`).join('')}
+    return `<section class="p-hero rise" style="--c:var(--sun)"><span class="p-art big">${ART.product('checkout')}</span><div><h1>Checkout with no surprises</h1><p class="muted">Return rules for every item, shown before you pay. Demo cart, simulated payment.</p></div></section>
+      <div class="two"><section class="panel rise"><h3>Your cart</h3>${CART.map(c => `<div class="cart-row"><span class="pk-e">${ART.item(c.e)}</span><div><b>${esc(c.n)}</b><span class="pill p-${c.rule[0]}">${esc(c.rule[1])}</span></div><b>${inr(c.price)}</b></div>`).join('')}
         <div class="cart-row tot"><span></span><b>Total</b><b>${inr(total)}</b></div></section>
       <section class="panel rise"><h3>If you ever return something, refund to…</h3>
         <button class="opt ${pref === 'original' ? 'on' : ''}" data-act="refpref" data-v="original"><b>💳 Where I paid from</b><span>Card 5–7 days · UPI 1–3 days after the check</span></button>
@@ -389,12 +385,37 @@
   function vShipping() {
     const drops = st.extra.filter(r => Object.values(r.items).some(i => i.pickupSlot === 'drop-off'));
     const exch = st.extra.filter(r => Object.values(r.items).some(i => i.option === 'exchange' || i.option === 'replacement'));
-    const road = `<svg viewBox="0 0 600 120" class="road" role="img" aria-label="Truck moving from warehouse to your home"><path id="rd" d="M30 90 C 150 20, 250 120, 360 60 S 520 40, 570 70" fill="none" stroke="var(--line)" stroke-width="14" stroke-linecap="round"/><path d="M30 90 C 150 20, 250 120, 360 60 S 520 40, 570 70" fill="none" stroke="var(--card)" stroke-width="2" stroke-dasharray="10 10"/><text x="20" y="115" class="rd-t">🏭</text><text x="555" y="105" class="rd-t">🏠</text><g><text font-size="30" x="-16" y="10">🚚</text><animateMotion dur="6s" repeatCount="indefinite"><mpath href="#rd"/></animateMotion></g></svg>`;
-    return `<section class="p-hero rise" style="--c:var(--mint)"><span class="p-ic big">🚚</span><div><h1>Shipping</h1><p class="muted">Outgoing parcels, exchange deliveries, drop-off codes and proof of handover.</p></div></section>
-      <section class="panel rise"><div class="row between"><h3>Order ${O2.id} · Watch + Bedsheet</h3><span class="pill p-done">Delivered ${day(O2.deliveredAt)}</span></div>${road}</section>
-      ${exch.map(r => Object.entries(r.items).map(([id, x]) => `<section class="panel rise"><div class="row between"><h3>${S.EMOJI[id]} New ${esc(itemOf(id).short.toLowerCase())} (${x.option})</h3><span class="pill p-moving">Ships with pickup</span></div>${road}</section>`).join('')).join('')}
-      ${drops.map(r => `<section class="panel rise"><h3>🏪 Drop-off code · ${r.id}</h3><div class="barcode" aria-label="Drop-off code">${sha256(r.id).slice(0, 28).split('').map(c => `<i style="width:${(parseInt(c, 16) % 3) + 2}px"></i>`).join('')}</div><p class="code">DROP-${sha256(r.id).slice(0, 6).toUpperCase()}</p><p class="small muted">Show this at any partner store. You get a receipt with a photo of the item.</p></section>`).join('')}
-      <section class="panel rise"><h3>🧾 Proof of handover · ${S.RETURN_ID}</h3><p>Receipt <b>HOV-5512</b> · 18 Oct, 11:05 AM · GPS 12 m from your address · 3 photos by you, 2 by the agent.</p><p class="small muted">This is what protects you if an item is later called “used” or “missing”.</p></section>`;
+    let rn = 0;
+    const road = (from = 'Warehouse', to = 'Your home', done = false) => { const id = 'rl' + (rn++); return `<div class="route ${done ? 'done' : ''}" role="img" aria-label="Parcel moving from ${from} to ${to}">
+      <svg viewBox="0 0 600 90" class="route-svg"><defs><filter id="${id}g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <linearGradient id="${id}l" x1="0" x2="1"><stop offset="0" stop-color="#FF4D2E"/><stop offset=".5" stop-color="#7B5CFF"/><stop offset="1" stop-color="#3DDC97"/></linearGradient></defs>
+        <line x1="40" y1="45" x2="560" y2="45" stroke="var(--line)" stroke-width="6" stroke-linecap="round"/>
+        <line x1="40" y1="45" x2="560" y2="45" stroke="url(#${id}l)" stroke-width="6" stroke-linecap="round" class="route-fill"/>
+        <circle cx="40" cy="45" r="11" fill="#FF4D2E" filter="url(#${id}g)" class="pulse-dot"/><circle cx="560" cy="45" r="11" fill="#3DDC97" filter="url(#${id}g)" class="pulse-dot d2"/>
+        <g filter="url(#${id}g)"><circle r="13" fill="#7B5CFF" opacity=".35"><animate attributeName="r" values="10;20;10" dur="1.6s" repeatCount="indefinite"/></circle><circle r="8" fill="#6E8BFF"/>
+          <animateMotion dur="${done ? '0.01s' : '4.5s'}" repeatCount="${done ? '1' : 'indefinite'}" fill="freeze" path="M40 45 H 560"/></g></svg>
+      <div class="route-labels"><span><i class="dot red"></i>${from}</span><span><i class="dot purple"></i>On the way</span><span><i class="dot green"></i>${to}</span></div></div>`; };
+    return `<section class="p-hero rise" style="--c:var(--mint)"><span class="p-art big">${ART.product('shipping')}</span><div><h1>${esc(t('p_shipping'))}</h1><p class="muted">${esc(t('p_shipping_d'))}</p></div></section>
+      <section class="panel rise"><div class="row between"><h3>Order ${O2.id} · Watch + Bedsheet</h3><span class="pill p-done">Delivered ${day(O2.deliveredAt)}</span></div>${road('Warehouse', 'Your home', false)}</section>
+      ${exch.map(r => Object.entries(r.items).map(([id, x]) => `<section class="panel rise"><div class="row between"><h3>New ${esc(itemOf(id).short.toLowerCase())} (${x.option})</h3><span class="pill p-moving">Ships with pickup</span></div>${road('Seller', 'Your home')}</section>`).join('')).join('')}
+      ${drops.map(r => `<section class="panel rise"><h3>Drop-off code · ${r.id}</h3><div class="barcode" aria-label="Drop-off code">${sha256(r.id).slice(0, 28).split('').map(c => `<i style="width:${(parseInt(c, 16) % 3) + 2}px"></i>`).join('')}</div><p class="code">DROP-${sha256(r.id).slice(0, 6).toUpperCase()}</p><p class="small muted">Show this at any partner store. You get a receipt with a photo of the item.</p></section>`).join('')}
+      <section class="panel rise"><div class="row between"><h3>Return ${S.RETURN_ID} · Shoes + Kurta</h3><span class="pill p-done">At warehouse</span></div>${road('Your home', 'Warehouse', true)}</section>
+      <section class="panel rise"><h3>Proof of handover · ${S.RETURN_ID}</h3><p>Receipt <b>HOV-5512</b> · 18 Oct, 11:05 AM · GPS 12 m from your address · 3 photos by you, 2 by the agent.</p><p class="small muted">This is what protects you if an item is later called “used” or “missing”.</p></section>`;
+  }
+
+  // ---------------------------------------------------------------- REPORT FRAUD
+  const FRAUD_KINDS = ['Someone asked for my OTP or PIN', 'Fake “returnease support” call or message', 'Asked to install a screen-sharing app', 'Fake refund link or QR code', 'Courier asked for extra money', 'Item swapped or tampered with', 'Something else'];
+  function vReport() {
+    const f = ui.rep || (ui.rep = { kind: null });
+    const mine = ui.reports.map(r => `<li class="rv rise"><span class="rep-dot"></span><div><b>${esc(r.kind)}</b> <span class="muted small">${day(r.created_at)}</span>${r.details ? `<p class="small">${esc(r.details)}</p>` : ''}${r.phone_or_link ? `<p class="small muted">${esc(r.phone_or_link)}</p>` : ''}<span class="pill p-moving">Received · team reviewing</span></div></li>`).join('');
+    return `<section class="p-hero rise report-hero" style="--c:#E5383B"><span class="p-art big">${ART.product('report')}</span><div><h1>${esc(t('report_title'))}</h1><p class="muted">${esc(t('report_sub'))}</p></div></section>
+      <div class="alert-strip rise">🔒 ${esc(t('scam'))} · Cyber fraud helpline <b>1930</b> · <b>cybercrime.gov.in</b></div>
+      <form class="panel rise" id="repform"><h3>What happened?</h3><div class="kinds">${FRAUD_KINDS.map(k => `<button type="button" class="kind ${f.kind === k ? 'on' : ''}" data-act="kind" data-v="${esc(k)}">${esc(k)}</button>`).join('')}</div>
+        <label class="field">Phone number, link or name used (optional)<input id="rep-who" maxlength="200" placeholder="e.g. +91 98xxxxxx12 or the link they sent"></label>
+        <label class="field">Details (optional)<textarea id="rep-det" rows="3" maxlength="1000" placeholder="What did they say or ask for?"></textarea></label>
+        <p class="small muted">Never type your OTP, PIN or card number here.</p>
+        <button class="btn danger big block" data-act="sendreport">${esc(t('report_btn'))}</button></form>
+      <h2>${esc(t('report_title'))} · history</h2><ul class="rvs">${mine || '<li class="muted">No reports yet.</li>'}</ul>`;
   }
 
   // ---------------------------------------------------------------- REVIEWS
@@ -405,12 +426,12 @@
     const sel = route[1] || ui.revItem || ids[0]; ui.revItem = sel;
     const f = ui.revForm && ui.revForm.id === sel ? ui.revForm : (ui.revForm = { id: sel, ok: null, rs: 0, ps: 0, tags: [], comment: '' });
     const it = itemOf(sel);
-    const mine = ui.reviews.map(r => `<li class="rv rise"><span class="pk-e">${S.EMOJI[r.item_id] || '📦'}</span><div><b>${esc(r.item_name || r.item_id)}</b> <span class="muted small">${day(r.created_at)}</span>
+    const mine = ui.reviews.map(r => `<li class="rv rise"><span class="pk-e">${ART.item(r.item_id)}</span><div><b>${esc(r.item_name || r.item_id)}</b> <span class="muted small">${day(r.created_at)}</span>
       <div class="small">${r.return_ok ? '✅ Return done with no problem' : '⚠️ Had a problem'} · Return ${'★'.repeat(r.return_stars || 0)} · Product ${'★'.repeat(r.product_stars || 0)}</div>
       ${(r.tags || []).length ? `<div class="chips">${r.tags.map(x => `<span class="chip">${esc(x)}</span>`).join('')}</div>` : ''}${r.comment ? `<p class="small">“${esc(r.comment)}”</p>` : ''}</div></li>`).join('');
     return `<h1>${t('reviews')}</h1>
-      <div class="rv-items">${ids.map(id => `<a href="#/reviews/${id}" class="rv-pick ${id === sel ? 'on' : ''}">${S.EMOJI[id]} ${esc(itemOf(id).short)}</a>`).join('')}</div>
-      <form class="panel rise" id="revform"><h2>${S.EMOJI[sel]} ${esc(it.name)}</h2>
+      <div class="rv-items">${ids.map(id => `<a href="#/reviews/${id}" class="rv-pick ${id === sel ? 'on' : ''}">${ART.item(id)} ${esc(itemOf(id).short)}</a>`).join('')}</div>
+      <form class="panel rise" id="revform"><h2>${ART.item(sel)} ${esc(it.name)}</h2>
         <p class="q">${t('return_ok')}</p><div class="yn"><button type="button" class="${f.ok === true ? 'on' : ''}" data-act="ok" data-v="1">👍 ${t('yes')}</button><button type="button" class="${f.ok === false ? 'on' : ''}" data-act="ok" data-v="0">👎 ${t('no')}</button></div>
         <p class="q">${t('return_exp')}</p>${stars('rs', f.rs)}
         <p class="q">${t('product')}</p>${stars('ps', f.ps)}
@@ -424,13 +445,13 @@
   const INTENTS = [
     { k: ['otp', 'pin', 'scam', 'fraud', 'call', 'ओटीपी', 'ఓటీపీ'], f: () => ({ text: '<b>That’s a scam.</b> We never ask for OTP, PIN, card number or screen-sharing to refund you. Report it at cybercrime.gov.in or call 1930.' }) },
     { k: ['human', 'agent', 'complain', 'complaint', 'person', 'escalat', 'शिकायत', 'ఫిర్యాదు'], f: () => { const id = 'CMP-' + (100000 + st.tickets.length * 7 + 31); st.tickets.push({ id, at: new Date().toISOString() }); log('customer', 'ESCALATED', { ticket: id }); save(); return { text: `Done. Complaint <b>${id}</b> created with all your dates and references attached. A person replies within 48 h (e-commerce grievance rules require acknowledgement within 48 h).` }; } },
-    { k: ['money', 'refund', 'paisa', 'paise', 'पैसा', 'पैसे', 'రిఫండ్', 'డబ్బు', 'பணம்', 'ಹಣ', 'പണം', 'টাকা', 'where'], f: () => { const tt = totals(); return { text: `You’ve got <b>${inr(tt.back)}</b> back of <b>${inr(tt.total)}</b>.`, card: ['A', 'B'].map(id => `<div class="cc"><span>${S.EMOJI[id]}</span><div><b>${esc(itemOf(id).short)}</b><small>${esc(headline(id).msg)}</small></div></div>`).join(''), acts: [['Open shoes', '#/item/A'], ['Open kurta', '#/item/B']] }; } },
+    { k: ['money', 'refund', 'paisa', 'paise', 'पैसा', 'पैसे', 'రిఫండ్', 'డబ్బు', 'பணம்', 'ಹಣ', 'പണം', 'টাকা', 'where'], f: () => { const tt = totals(); return { text: `You’ve got <b>${inr(tt.back)}</b> back of <b>${inr(tt.total)}</b>.`, card: ['A', 'B'].map(id => `<div class="cc"><span>${ART.item(id)}</span><div><b>${esc(itemOf(id).short)}</b><small>${esc(headline(id).msg)}</small></div></div>`).join(''), acts: [['Open shoes', '#/item/A'], ['Open kurta', '#/item/B']] }; } },
     { k: ['less', 'coupon', 'deduct', 'why', 'कम', 'తక్కువ'], f: () => { const a = allocFor('B'); return { text: 'Your coupon gave ₹500 off the whole order, so each item carries a share by price. Kurta:', card: `<table class="lines">${a.lines[0].steps.map(s => `<tr><td>${esc(s.label)}</td><td>${s.amount < 0 ? '−' : ''}${inr(Math.abs(s.amount))}</td></tr>`).join('')}<tr class="tot"><td>Refund</td><td>${inr(a.total)}</td></tr></table>` }; } },
     { k: ['voucher', 'gift card', 'वाउचर', 'వోచర్'], f: () => { const v = allocFor('B').legs.find(l => l.type === 'voucher'); return { text: `The voucher part (${inr(v.amount)}) comes back as a voucher, not to the bank. It’s valid till <b>${day(v.voucherExpiry.at)}</b>${v.voucherExpiry.extended ? ' (extended so you get at least 30 days)' : ''}.` }; } },
     { k: ['pickup', 'courier', 'missed', 'unreachable', 'पिकअप', 'పికప్'], f: () => ({ text: 'Pickup failed twice. Attempt 1: the courier’s GPS was 1.8 km away (their fault). Attempt 2: calls never reached you. <b>Neither counts against you.</b> Collected on 18 Oct with receipt HOV-5512.', acts: [['See timeline', '#/item/A']] }) },
     { k: ['shoe', 'shoes', 'जूते', 'షూ'], f: () => ({ text: esc(headline('A').msg), acts: [['Open shoes', '#/item/A']] }) },
     { k: ['kurta', 'कुर्ता', 'కుర్తా'], f: () => ({ text: esc(headline('B').msg), acts: [['Open kurta', '#/item/B']] }) },
-    { k: ['track', 'status', 'ट्रैक', 'స్టేటస్'], f: () => ({ text: 'Here are your items:', card: ['A', 'B', ...st.extra.flatMap(r => Object.keys(r.items))].map(id => `<div class="cc"><span>${S.EMOJI[id]}</span><div><b>${esc(itemOf(id).short)}</b> ${pill(progress(id).status)}</div></div>`).join(''), acts: [['Go home', '#/home']] }) },
+    { k: ['track', 'status', 'ट्रैक', 'స్టేటస్'], f: () => ({ text: 'Here are your items:', card: ['A', 'B', ...st.extra.flatMap(r => Object.keys(r.items))].map(id => `<div class="cc"><span>${ART.item(id)}</span><div><b>${esc(itemOf(id).short)}</b> ${pill(progress(id).status)}</div></div>`).join(''), acts: [['Go home', '#/home']] }) },
     { k: ['exchange', 'size', 'replace', 'बदल', 'మార్చ'], f: () => ({ text: 'For a size problem, an exchange is usually fastest: the new size comes with the pickup agent and no money is stuck. You can still choose a refund.', acts: [['Start a return', '#/start']] }) },
     { k: ['start', 'return', 'new', 'लौट', 'రిటర్న్'], f: () => ({ text: 'Let’s check which items you can return.', acts: [['Start a return', '#/start']] }) },
     { k: ['review', 'rate', 'rating', 'समीक्षा', 'సమీక్ష'], f: () => ({ text: 'Tell us how the return went.', acts: [['Write a review', '#/reviews']] }) },
@@ -543,6 +564,16 @@
         case 'theme': ui.theme = ui.theme === 'dark' ? 'light' : 'dark'; try { localStorage.setItem('rewind-theme', ui.theme); } catch (x) {} API.savePrefs({ theme: ui.theme }); break;
         case 'menu': ui.menu = !ui.menu; break;
         case 'info': ui.info = !ui.info; break;
+        case 'enter': return enterApp();
+        case 'google': try { await API.google(); } catch (x) { ui.authErr = x.message; } break;
+        case 'kind': ui.rep.kind = v; break;
+        case 'sendreport': {
+          const det = ($('#rep-det').value || '').trim(), who = ($('#rep-who').value || '').trim();
+          if (!ui.rep.kind) { toast('Pick what happened first.', 'bad'); return; }
+          if (/\b\d{4,8}\b/.test(det) && /otp|pin/i.test(det)) { toast('Please remove any OTP or PIN from the details.', 'bad'); return; }
+          await API.report({ kind: ui.rep.kind, details: det.slice(0, 1000), phone_or_link: who.slice(0, 200) });
+          ui.reports = await API.reports(); log('customer', 'FRAUD_REPORTED', { kind: ui.rep.kind }); ui.rep = null; save(); confetti(); toast('Report sent. Thank you for keeping others safe.', 'good'); break;
+        }
         case 'placeorder': toast('Order placed (simulated). Return rules saved with your order.', 'good'); confetti(); break;
         case 'refpref': ui.refpref = v; break;
         case 'pickx': ui.wiz = { id: v, step: 1, reason: null, option: null, slot: 0, consent: false, preferExchange: true }; location.hash = '#/start/' + v; return;
@@ -596,6 +627,26 @@
   window.addEventListener('hashchange', () => { ui.menu = false; if (!location.hash.startsWith('#/start/')) ui.wiz = ui.wiz && location.hash.startsWith('#/start') ? null : ui.wiz; render(); window.scrollTo(0, 0); });
   window.addEventListener('offline', () => { if (st) { st.faults.offline = true; render(); } });
   window.addEventListener('online', () => { if (st && st.faults.offline) { injectFault('offline'); save(); render(); } });
+
+  function enterApp() {
+    if (!ui.splash || ui.splashLeaving) return;
+    ui.splashLeaving = true; render();
+    setTimeout(() => { ui.splash = false; ui.splashLeaving = false; render(); }, 650);
+  }
+  let ty = null, tx = null;
+  document.addEventListener('touchstart', e => { ty = e.touches[0].clientY; tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (ty === null) return;
+    const dy = e.changedTouches[0].clientY - ty, dx = e.changedTouches[0].clientX - tx; ty = null;
+    if (ui.splash && dy < -40) return enterApp();
+    // swipe left/right on the main area moves between tabs
+    if (ui.user && Math.abs(dx) > 70 && Math.abs(dy) < 50 && !ui.chatOpen && e.target.closest('main')) {
+      const r = (location.hash.replace(/^#\/?/, '') || 'home').split('/')[0], i = TABS.findIndex(x => x[0] === r);
+      if (i >= 0) { const n = i + (dx < 0 ? 1 : -1); if (TABS[n]) location.hash = '#/' + TABS[n][0]; }
+    }
+  }, { passive: true });
+  window.addEventListener('wheel', e => { if (ui.splash && e.deltaY > 25) enterApp(); }, { passive: true });
+  document.addEventListener('keydown', e => { if (ui.splash && ['ArrowUp', 'ArrowDown', 'Enter', ' ', 'PageDown'].includes(e.key) && !e.target.closest('select')) { e.preventDefault(); enterApp(); } });
 
   (async () => { render(); const u = await API.restore(); if (u) await afterLogin(u); else render(); })();
 })();

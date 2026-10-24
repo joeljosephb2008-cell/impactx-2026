@@ -57,7 +57,32 @@
       }
     },
     signOut() { session = null; safe.del(SKEY); },
-    async restore() { if (session && session.local) mode = 'local'; await fresh(); return session && session.user; },
+    async restore() {
+      // Coming back from Google sign-in: tokens arrive in the URL fragment.
+      const h = new URLSearchParams(location.hash.replace(/^#/, ''));
+      if (h.get('access_token')) {
+        try { const user = await req('/auth/v1/user', { headers: { Authorization: 'Bearer ' + h.get('access_token') } }, false); keep({ access_token: h.get('access_token'), refresh_token: h.get('refresh_token'), expires_in: +h.get('expires_in') || 3600, user }); } catch (e) {}
+        history.replaceState(null, '', location.pathname + '#/home');
+      }
+      if (session && session.local) mode = 'local'; await fresh(); return session && session.user;
+    },
+    async google() {
+      let on = false;
+      try { const s = await req('/auth/v1/settings', {}, false); on = !!(s.external && s.external.google); } catch (e) { throw new Error('Can’t reach the sign-in server right now. Use email for now.'); }
+      if (!on) throw new Error('Google sign-in isn’t switched on for this prototype yet. Please use email or the demo account.');
+      location.href = URL + '/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent(location.origin + location.pathname);
+    },
+    async report(r) {
+      const row = { user_id: session.user.id, ...r };
+      const key = 'rewind-reports-' + session.user.id;
+      if (mode === 'local' || session.local) { const all = safe.get(key) || []; all.unshift({ ...row, created_at: new Date().toISOString() }); safe.set(key, all); return; }
+      await req('/rest/v1/fraud_reports', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(row) });
+    },
+    async reports() {
+      const key = 'rewind-reports-' + session.user.id;
+      if (mode === 'local' || session.local) return safe.get(key) || [];
+      try { return await req(`/rest/v1/fraud_reports?user_id=eq.${session.user.id}&order=created_at.desc&select=*`); } catch (e) { return safe.get(key) || []; }
+    },
     // ----- data
     async loadState() {
       const uid = session.user.id;

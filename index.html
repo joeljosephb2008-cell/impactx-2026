@@ -3,54 +3,43 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0A6E6E">
-  <meta name="description" content="ReturnEase: returns and refunds explained. IMPACTX 2026 prototype with sample data.">
-  <title>ReturnEase</title>
+  <meta name="theme-color" content="#FF5A1F">
+  <meta name="description" content="ReturnEase by Sleepy Coders: item-level returns and refunds with three-source reconciliation. IMPACTX 2026, Challenge 15. Simulated data.">
+  <title>ReturnEase · Sleepy Coders</title>
   <link rel="stylesheet" href="css/styles.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230A6E6E'/><path d='M10 14l-4 4 4 4M6 18h14a6 6 0 000-12h-4' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='2' y='2' width='28' height='28' rx='6' fill='%23FF5A1F' stroke='%2314141F' stroke-width='3'/><path d='M11 13l-4 4 4 4M7 17h13a5 5 0 000-10h-3' stroke='%2314141F' stroke-width='3' fill='none' stroke-linecap='round'/></svg>">
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
-  <p id="banner" class="banner" role="note">Prototype with sample data. No real orders, pickups or payments.</p>
+  <p id="sim" class="sim" role="note">SIMULATED DATA</p>
   <header class="top">
-    <a href="#/" class="brand" aria-label="ReturnEase home">
-      <span class="logo" aria-hidden="true">↩</span>
-      <span><strong>ReturnEase</strong><span id="tagline" class="small">Returns and refunds, explained</span></span>
-    </a>
-    <div class="row gap">
-      <button class="icon-btn" data-read aria-label="Read this page aloud">🔊</button>
-      <button class="icon-btn" data-settings aria-label="Display and language">Aa</button>
+    <div class="brand"><span class="logo" aria-hidden="true">↩</span><div><strong>ReturnEase</strong><span id="tag" class="tag"></span></div></div>
+    <div class="tools">
+      <label class="sr-only" for="set-lang">Language</label>
+      <select id="set-lang"><option value="en">English</option><option value="te">తెలుగు</option><option value="hi">हिन्दी</option></select>
+      <label class="tgl"><input type="checkbox" id="set-big"> A+</label>
+      <label class="tgl"><input type="checkbox" id="set-hc"> HC</label>
+      <button id="btn-read" class="icon" aria-label="Read aloud">🔊</button>
+      <button id="btn-reset" class="icon" aria-label="Reset demo">↺</button>
     </div>
   </header>
-
-  <main id="main" tabindex="-1"></main>
-
-  <nav class="tabbar" aria-label="Main">
-    <a href="#/" data-page="home"><span aria-hidden="true">⌂</span><span data-t="navHome">Home</span></a>
-    <a href="#/returns" data-page="returns"><span aria-hidden="true">↩</span><span data-t="navReturns">Returns</span></a>
-    <a href="#/help" data-page="help"><span aria-hidden="true">?</span><span data-t="navHelp">Help</span></a>
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" data-nav="return">My return</button>
+    <button role="tab" data-nav="money">Money</button>
+    <button role="tab" data-nav="before">Before you return</button>
+    <button role="tab" data-nav="trust">Fairness</button>
+    <button role="tab" data-nav="judge">Judge console</button>
   </nav>
-
-  <dialog id="settings" aria-labelledby="settings-title">
-    <h2 id="settings-title" data-t="settings">Display and language</h2>
-    <label class="field"><span data-t="language">Language</span>
-      <select id="set-lang" data-lang>
-        <option value="en">English</option>
-        <option value="hi">हिन्दी (Hindi)</option>
-        <option value="te">తెలుగు (Telugu)</option>
-      </select></label>
-    <label class="field"><span data-t="textSize">Text size</span>
-      <input id="set-size" data-size type="range" min="0" max="3" step="1"></label>
-    <label class="radio"><input id="set-contrast" type="checkbox" data-contrast> <span data-t="contrast">High contrast</span></label>
-    <label class="radio"><input id="set-lowdata" type="checkbox" data-lowdata> <span data-t="lowData">Low data mode</span></label>
-    <button class="btn ghost block" data-read>🔊 Read this page aloud</button>
-    <button class="btn ghost block" data-reset><span data-t="resetDemo">Reset demo data</span></button>
-    <button class="btn primary block" data-close>Done</button>
-  </dialog>
-
-  <script src="js/data.js"></script>
+  <p id="offline" class="offline" role="status" hidden></p>
+  <main id="main" tabindex="-1"></main>
+  <footer class="foot">ReturnEase · Team Sleepy Coders · IMPACTX 2026 Challenge 15 · Simulated payment and logistics states</footer>
+  <div id="toasts" class="toasts"></div>
+  <div id="live" class="sr-only" aria-live="polite"></div>
+  <script src="js/sha256.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/scenario.js"></script>
+  <script src="js/tests.js"></script>
   <script src="js/i18n.js"></script>
-  <script src="js/logic.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/ui.js"></script>
 </body>
 </html>

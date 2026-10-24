@@ -1,34 +1,37 @@
-# ReturnEase · IMPACTX 2026 (Problem 15: The Return That Shouldn't Be a Hassle)
+# ReturnEase · Team Sleepy Coders · IMPACTX 2026 Challenge 15 (Hard Mode)
 
-A mobile-first prototype that makes returns and refunds clear: what you can return, exactly how much comes back, where the money goes, when it arrives, and what to do when it's late.
+**Live:** https://impactx-2026-seven.vercel.app/  ·  **Simulated data only** (no real store, courier, bank or seller is connected).
 
-**Live demo:** https://impactx-2026-seven.vercel.app/
+An item-level return and refund journey: eligibility before the request, a configurable refund waterfall across card / wallet / voucher, three-source reconciliation (seller · platform · payment provider) with *waiting vs stuck* classification, idempotent refunds, pickup and inspection disputes, a fair fraud friction ladder with appeal, and a tamper-evident audit trail.
 
-> Prototype with **sample data only**. No real orders, couriers, payments or government systems are connected.
+## Team
+B Joel (lead) · Sameer SK · Tejasvi G · Nikitha V
 
-## What it does
-| Feature | Problem it solves |
+## Architecture (plain HTML/CSS/JS, no build step)
+| File | Role |
 |---|---|
-| Multi-item return in one pickup, with per-item eligibility (window, hygiene items) | "Which of my items can I still return?" |
-| Per-item refund breakdown with pro-rata coupon share | "Why is my refund less than the price?" |
-| Split-payment refund (UPI + wallet, COD → UPI) with ETA per source | "Why did I get two refunds / where's the rest?" |
-| Per-item tracker; overall status = worst item | Mixed outcomes in one return |
-| Delay detection with ARN, bank script, escalation ladder (store → grievance officer → NCH 1915 → e-Daakhil) | "My refund is late and nobody answers" |
-| QC-failure challenge using pickup vs warehouse photos | Unfair rejections |
-| All SMS / email / app updates in one feed | Conflicting messages |
-| English / Hindi / Telugu, text size, high contrast, low-data mode, read aloud | Accessibility and inclusion |
-| Anti-scam notice, consent for address sharing, no OTP/PIN ever | Trust and privacy |
+| `js/engine.js` | All rules as pure functions: state machines, eligibility, waterfall, reconciliation, idempotency ledger, dispute judges, fraud ladder, options compare, wording library, audit chain, input validation |
+| `js/scenario.js` | Synthetic scenario from the brief + 18 planted conflicts + seeded heavy returners + threat model |
+| `js/tests.js` | Evaluation harness: 56 scripted cases + 3 success metrics |
+| `js/ui.js` | Screens and visuals (item metro lines, money waterfall, reconciliation timeline, friction ladder, audit chain) |
+| `js/i18n.js` | English, Telugu, Hindi |
+| `js/sha256.js` | SHA-256 for the hash-chained audit log |
 
-## Code map (plain HTML/CSS/JS, no build step)
-- `index.html` – page shell, header, bottom tabs, settings dialog
-- `js/data.js` – sample orders, payments, one in-progress return
-- `js/logic.js` – business rules: eligibility, refund maths, refund split, ETA, delay status, escalation
-- `js/i18n.js` – interface text in EN / HI / TE
-- `js/app.js` – screens (home, return wizard, tracker, help) and click handling
-- `css/styles.css` – design, high-contrast and dark mode
+## Results (run `node tests/run.js` or Judge console → Run all tests)
+- 56/56 scripted cases pass
+- M1 Refund allocation correctness: 10/10 generated mixed-instrument orders + 8/8 hand-checked
+- M2 Status mismatches classified (waiting / stuck / unknown / done): 10/10
+- M3 Fraud false-positive rate on genuine heavy returners: 1/8 = 13% (naive volume rule: 7/8 = 88%); abusers still caught 4/4
 
-## Run locally
-Open `index.html` in a browser. That's it.
+## Key design rules
+- Logistics and money are **separate state machines**; illegal and out-of-order transitions are rejected.
+- Money is integer paise; splits use largest-remainder so totals are exact.
+- Voucher portion refunds as a voucher, extended to at least 30 days of validity.
+- Never says money "reached" you before the provider confirms (`CREDITED_CONFIRMED`); enforced by test T-WORD-2.
+- One idempotency key per return:item:instrument; retries can never pay twice.
+- No OTP/PIN is ever requested.
+
+See `DATA_CARD.md` and `THREAT_MODEL.md`. Deliberately left out: real APIs, voice input, full translation of judge console.
 
 ## AI use
-Built with help from Claude (AI assistant), which the IMPACTX rules allow. The team reviewed, tested and can explain every part.
+Built with help from Claude (AI assistant), as the rules allow. The team reviewed, tested and can explain every part.

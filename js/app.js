@@ -384,22 +384,21 @@
   }
   function vShipping() {
     const drops = st.extra.filter(r => Object.values(r.items).some(i => i.pickupSlot === 'drop-off'));
-    const exch = st.extra.filter(r => Object.values(r.items).some(i => i.option === 'exchange' || i.option === 'replacement'));
     let rn = 0;
-    const road = (from = 'Warehouse', to = 'Your home', done = false) => { const id = 'rl' + (rn++); return `<div class="route ${done ? 'done' : ''}" role="img" aria-label="Parcel moving from ${from} to ${to}">
-      <svg viewBox="0 0 600 90" class="route-svg"><defs><filter id="${id}g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-        <linearGradient id="${id}l" x1="0" x2="1"><stop offset="0" stop-color="#FF4D2E"/><stop offset=".5" stop-color="#7B5CFF"/><stop offset="1" stop-color="#3DDC97"/></linearGradient></defs>
-        <line x1="40" y1="45" x2="560" y2="45" stroke="var(--line)" stroke-width="6" stroke-linecap="round"/>
-        <line x1="40" y1="45" x2="560" y2="45" stroke="url(#${id}l)" stroke-width="6" stroke-linecap="round" class="route-fill"/>
-        <circle cx="40" cy="45" r="11" fill="#FF4D2E" filter="url(#${id}g)" class="pulse-dot"/><circle cx="560" cy="45" r="11" fill="#3DDC97" filter="url(#${id}g)" class="pulse-dot d2"/>
-        <g filter="url(#${id}g)"><circle r="13" fill="#7B5CFF" opacity=".35"><animate attributeName="r" values="10;20;10" dur="1.6s" repeatCount="indefinite"/></circle><circle r="8" fill="#6E8BFF"/>
-          <animateMotion dur="${done ? '0.01s' : '4.5s'}" repeatCount="${done ? '1' : 'indefinite'}" fill="freeze" path="M40 45 H 560"/></g></svg>
-      <div class="route-labels"><span><i class="dot red"></i>${from}</span><span><i class="dot purple"></i>On the way</span><span><i class="dot green"></i>${to}</span></div></div>`; };
+    // Returns travel one way only: from the customer's home (green) to the warehouse (red).
+    const road = (done = false) => { const id = 'rl' + (rn++); return `<div class="route ${done ? 'done' : ''}" role="img" aria-label="Return parcel ${done ? 'has reached' : 'moving from your home to'} the warehouse">
+      <svg viewBox="0 0 600 50" class="route-svg"><defs><filter id="${id}g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <linearGradient id="${id}l" gradientUnits="userSpaceOnUse" x1="40" y1="25" x2="560" y2="25"><stop offset="0" stop-color="#3DDC97"/><stop offset=".5" stop-color="#7B5CFF"/><stop offset="1" stop-color="#FF4D2E"/></linearGradient></defs>
+        <line x1="40" y1="25" x2="560" y2="25" stroke="var(--line)" stroke-width="6" stroke-linecap="round"/>
+        <line x1="40" y1="25" x2="560" y2="25" stroke="url(#${id}l)" stroke-width="6" stroke-linecap="round" class="route-fill"/>
+        <circle cx="40" cy="25" r="11" fill="#3DDC97" filter="url(#${id}g)" class="pulse-dot"/><circle cx="560" cy="25" r="11" fill="#FF4D2E" filter="url(#${id}g)" class="pulse-dot d2"/>
+        ${done ? '' : `<g filter="url(#${id}g)"><circle r="13" fill="#7B5CFF" opacity=".35"><animate attributeName="r" values="10;20;10" dur="1.6s" repeatCount="indefinite"/></circle><circle r="8" fill="#6E8BFF"/><animateMotion dur="4.5s" repeatCount="indefinite" path="M40 25 H 560"/></g>`}</svg>
+      <div class="route-labels"><span><i class="dot green"></i>Your home</span><span><i class="dot purple"></i>${done ? 'Delivered to warehouse' : 'On the way'}</span><span><i class="dot red"></i>Warehouse</span></div></div>`; };
+    const active = st.extra.map(r => { const [id, x] = Object.entries(r.items)[0]; const cur = E.current(x.item).state; const done = !/REQUESTED|PICKUP|DROPOFF|COLLECTED|TRANSIT/.test(cur); return `<section class="panel rise"><div class="row between"><h3>Return ${r.id} · ${esc(itemOf(id).short)}</h3><span class="pill ${done ? 'p-done' : 'p-moving'}">${done ? 'At warehouse' : /COLLECTED|TRANSIT/.test(cur) ? 'On the way' : 'Waiting for pickup'}</span></div>${road(done)}${x.option !== 'refund' ? `<p class="small muted">Your new ${esc(itemOf(id).short.toLowerCase())} (${x.option}) is handed over at the same pickup.</p>` : ''}</section>`; }).join('');
     return `<section class="p-hero rise" style="--c:var(--mint)"><span class="p-art big">${ART.product('shipping')}</span><div><h1>${esc(t('p_shipping'))}</h1><p class="muted">${esc(t('p_shipping_d'))}</p></div></section>
-      <section class="panel rise"><div class="row between"><h3>Order ${O2.id} · Watch + Bedsheet</h3><span class="pill p-done">Delivered ${day(O2.deliveredAt)}</span></div>${road('Warehouse', 'Your home', false)}</section>
-      ${exch.map(r => Object.entries(r.items).map(([id, x]) => `<section class="panel rise"><div class="row between"><h3>New ${esc(itemOf(id).short.toLowerCase())} (${x.option})</h3><span class="pill p-moving">Ships with pickup</span></div>${road('Seller', 'Your home')}</section>`).join('')).join('')}
+      ${active || `<a class="tile rise" href="#/start"><span class="t-ic">${ART.product('start')}</span><b>${esc(t('start'))}</b><small>Start a return to watch its parcel travel from your home to the warehouse, live.</small></a>`}
       ${drops.map(r => `<section class="panel rise"><h3>Drop-off code · ${r.id}</h3><div class="barcode" aria-label="Drop-off code">${sha256(r.id).slice(0, 28).split('').map(c => `<i style="width:${(parseInt(c, 16) % 3) + 2}px"></i>`).join('')}</div><p class="code">DROP-${sha256(r.id).slice(0, 6).toUpperCase()}</p><p class="small muted">Show this at any partner store. You get a receipt with a photo of the item.</p></section>`).join('')}
-      <section class="panel rise"><div class="row between"><h3>Return ${S.RETURN_ID} · Shoes + Kurta</h3><span class="pill p-done">At warehouse</span></div>${road('Your home', 'Warehouse', true)}</section>
+      <section class="panel rise"><div class="row between"><h3>Return ${S.RETURN_ID} · Shoes + Kurta</h3><span class="pill p-done">At warehouse</span></div>${road(true)}</section>
       <section class="panel rise"><h3>Proof of handover · ${S.RETURN_ID}</h3><p>Receipt <b>HOV-5512</b> · 18 Oct, 11:05 AM · GPS 12 m from your address · 3 photos by you, 2 by the agent.</p><p class="small muted">This is what protects you if an item is later called “used” or “missing”.</p></section>`;
   }
 

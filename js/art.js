@@ -38,8 +38,8 @@
       <rect x="46" y="62" width="64" height="42" rx="10" fill="url(#coA)"/><rect x="46" y="72" width="64" height="8" fill="#16131F" opacity=".7"/><rect x="56" y="88" width="20" height="6" rx="3" fill="#FFF6E9"/>
       <circle cx="40" cy="88" r="10" fill="#3DDC97"/><path d="M35 88l4 4 7-8" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`, 'Receipt and card', grad('coA', '#FFD566', '#FFB01F')),
     shipping: () => svg(`<path d="M18 92C40 30 80 100 102 28" fill="none" stroke="url(#shG)" stroke-width="4" stroke-linecap="round"/>
-      <circle cx="18" cy="92" r="9" fill="#FF4D2E"/><circle cx="18" cy="92" r="15" fill="#FF4D2E" opacity=".25"/><circle cx="102" cy="28" r="9" fill="#3DDC97"/><circle cx="102" cy="28" r="15" fill="#3DDC97" opacity=".25"/>
-      <circle cx="58" cy="62" r="10" fill="#7B5CFF"/><circle cx="58" cy="62" r="18" fill="#7B5CFF" opacity=".25"/>`, 'Route from red to green with a purple dot', grad('shG', '#FF4D2E', '#3DDC97')),
+      <circle cx="18" cy="92" r="9" fill="#3DDC97"/><circle cx="18" cy="92" r="15" fill="#3DDC97" opacity=".25"/><circle cx="102" cy="28" r="9" fill="#FF4D2E"/><circle cx="102" cy="28" r="15" fill="#FF4D2E" opacity=".25"/>
+      <circle cx="58" cy="62" r="10" fill="#7B5CFF"/><circle cx="58" cy="62" r="18" fill="#7B5CFF" opacity=".25"/>`, 'Route from home to warehouse', grad('shG', '#3DDC97', '#FF4D2E')),
     report: () => svg(`<path d="M60 12l40 14v30c0 26-18 44-40 52-22-8-40-26-40-52V26z" fill="url(#rpA)"/><path d="M60 38v26" stroke="#FFF6E9" stroke-width="8" stroke-linecap="round"/><circle cx="60" cy="80" r="5" fill="#FFF6E9"/>`, 'Shield with alert', grad('rpA', '#FF6B6B', '#C9184A')),
   };
   g.ART = { item: id => (ITEMS[id] || ITEMS.D)(), product: k => (PRODUCTS[k] || PRODUCTS.start)() };

@@ -590,7 +590,7 @@
     if (!el) { sp.style.opacity = 0; return; }
     const r = el.getBoundingClientRect(), pad = 8;
     Object.assign(sp.style, { opacity: 1, left: r.left - pad + 'px', top: r.top - pad + 'px', width: r.width + pad * 2 + 'px', height: Math.min(r.height + pad * 2, innerHeight * .6) + 'px' });
-    o.querySelector('.t-card').classList.toggle('t-up', r.top + r.height / 2 > innerHeight * .55);
+    const cardH = o.querySelector('.t-card').offsetHeight + 110; o.querySelector('.t-card').classList.toggle('t-up', Math.min(r.bottom + pad, innerHeight * .6 + r.top) > innerHeight - cardH && r.top > cardH);
   }
   function tourGo(i) {
     clearTimeout(tourTimer); try { speechSynthesis.cancel(); } catch (x) {}
@@ -602,7 +602,7 @@
     if (location.hash !== s.h) location.hash = s.h;
     setTimeout(() => {
       const el = document.querySelector(s.sel); if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      setTimeout(() => { spot(); if (s.act) { s.act(); save(); render(); setTimeout(spot, 400); } }, 650);
+      setTimeout(() => { spot(); if (s.act) { s.act(); save(); render(); setTimeout(spot, 400); } setTimeout(spot, 900); }, 650);
     }, 450);
     let spoke = false;
     try { if ('speechSynthesis' in window && speechSynthesis.getVoices().length) { const u = new SpeechSynthesisUtterance(s.say); u.lang = 'en-IN'; u.rate = 1; u.onend = () => { tourTimer = setTimeout(() => tourGo(tourI + 1), 900); }; speechSynthesis.speak(u); spoke = true; } } catch (x) {}

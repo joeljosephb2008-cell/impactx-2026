@@ -86,7 +86,7 @@
       const v = card ? verdictOf(id, card) : { why: 'Provider confirmed every part reached you.', confidence: 'high' };
       return { msg: (p.status === 'done' ? 'All of your refund has arrived. ' : 'Refund: ') + parts.join(' · '), why: v.why + (v.notes && v.notes.length ? ' ' + v.notes.join(' ') : ''), conf: v.confidence, src: 'Platform + payment provider + seller', at: st.faults.stale ? '2026-10-23T02:30:00.000Z' : NOW, stale: st.faults.stale };
     }
-    const ret = st.extra.find(x => x.items[id]); return { msg: E.message('item', p.cur, { item: it.short, when: r.pickupSlot || 'the booked slot', why: '', code: ret ? 'DROP-' + sha256(ret.id).slice(0, 6).toUpperCase() : '' }), why: 'Latest event from the courier.', conf: 'high', src: 'Courier', at: E.current(r.item).at };
+    const ret = st.extra.find(x => x.items[id]); return { msg: E.message('item', p.cur, { item: it.short, when: r.pickupSlot || 'the booked slot', why: ((r.decision && r.decision.reason) || '').replace(/\.$/, ''), code: ret ? 'DROP-' + sha256(ret.id).slice(0, 6).toUpperCase() : '' }), why: 'Latest event from the courier.', conf: 'high', src: 'Courier', at: E.current(r.item).at };
   }
 
   // ---------------------------------------------------------------- graphics
@@ -258,7 +258,7 @@
         <h1>${t('your_return')} <span class="tag">${S.RETURN_ID}</span></h1>
         <p class="big-money"><span data-count="${tt.back}">₹0</span> <small>${t('back_so_far')} ${t('of')} ${inr(tt.total)}</small></p>
         <div class="bar"><i style="--w:${pct}%"></i></div>
-        <p class="scam">🔒 ${esc(t('scam'))}</p></div>${heroArt()}</section>
+        <p class="scam">🔒 ${esc(t('scam'))}</p><p class="sim-chip">Simulated orders, couriers and payments</p></div>${heroArt()}</section>
       <div class="cta-row"><a class="tile rise" href="#/start"><span class="t-ic">${ART.product('start')}</span><b>${t('start')}</b><small>${esc(t('tile_start_d'))}</small></a>
       <a class="tile rise" href="#/reviews"><span class="t-ic stars-ic">★★★★</span><b>${t('rate')}</b><small>${ui.reviews.length} ${esc(t('reviews_saved'))}</small></a>
       <button class="tile rise" data-act="chat"><span class="t-ic chat-ic"><i></i><i></i><i></i></span><b>${t('need')}</b><small>${esc(t('chat_ph'))}</small></button></div>
@@ -507,6 +507,12 @@
         ${st.tamperBackup ? '<button class="btn ghost sm" data-act="restore">Restore entry</button>' : ''}</section>
       <section class="panel"><h3>Fair fraud check (Elite)</h3><p>Lakshmi: 12 returns in 90 days → volume rule <b>L${f.naiveLevel}</b>, after fairness check <b>L${f.level} · ${esc(f.rung.name)}</b>.</p><ul class="small">${f.fairness.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
         <table class="lines small"><tr><th>ID</th><th>Returns</th><th>Volume rule</th><th>Ours</th><th>Truth</th><th></th></tr>${S.RETURNERS.map(r => { const a = E.fraudAssess(r), ap = st.appeals[r.id]; return `<tr><td>${r.id}</td><td>${r.returns90}</td><td>L${a.naiveLevel}</td><td><b>L${ap === 'overturned' ? 0 : a.level}</b>${ap ? ' (' + ap + ')' : ''}</td><td>${r.legit ? 'genuine' : 'abuse'}</td><td>${a.level >= 2 && !ap ? `<button class="btn ghost sm" data-act="appeal" data-v="${r.id}">Appeal</button>` : ''}</td></tr>`; }).join('')}</table></section>
+      <section class="panel"><h3>Refund waterfall policy (configurable)</h3><p class="small muted">Preview for the shoes refund (₹2,581.25), after the kurta refund already used part of each payment method.</p>
+        <div class="seg">${[['proportional', 'Proportional'], ['cash-first', 'Bank first'], ['voucher-first', 'Voucher first']].map(([k, l]) => `<button type="button" role="tab" aria-selected="${(ui.wf || 'proportional') === k}" data-act="wf" data-v="${k}">${l}</button>`).join('')}</div>
+        ${(() => { const prior = {}; st.items.B.alloc.legs.forEach(l => { prior[l.instrumentId] = l.amount; }); const a = E.allocate(O, { items: [{ itemId: 'A' }] }, { order: ui.wf || 'proportional', now: NOW }, prior); return `<table class="lines">${a.legs.map(l => `<tr><td>${esc(l.label)}${l.refundAs === 'voucher' ? ` <span class="muted">(as voucher, valid till ${day(l.voucherExpiry.at)})</span>` : ''}</td><td>${inr(l.amount)}</td></tr>`).join('')}<tr class="tot"><td>Total ${a.balanced ? '✓ exact' : '✗'}</td><td>${inr(a.total)}</td></tr></table>`; })()}</section>
+      <section class="panel"><h3>Inspection dispute outcomes</h3><p class="small muted">Run the shoes review with different evidence. Only works while the shoes are still under review (Reset to try again).</p>
+        <div class="faults"><button class="fault" data-act="review" data-v="A">Photos contradict → full refund</button><button class="fault" data-act="reviewp" data-v="A">Minor wear in both → partial</button><button class="fault" data-act="reviewr" data-v="A">No handover photos → reject</button></div>
+        ${st.items.A.decision ? `<p class="small"><b>${esc(st.items.A.decision.outcome)} · ${st.items.A.decision.refundPct}%</b>: ${esc(st.items.A.decision.reason)}</p>` : ''}</section>
       <section class="panel"><h3>Threat model</h3><ol class="small">${S.THREATS.map(x => `<li><b>${esc(x.risk)}</b>: ${esc(x.mitigation)} <code>${esc(x.test)}</code></li>`).join('')}</ol></section>
       <section class="panel"><h3>Data card · ${S.DATA_CARD.length} planted conflicts</h3><ol class="small">${S.DATA_CARD.map(d => `<li><b>${d[0]}</b> ${esc(d[1])} → <i>${esc(d[2])}</i></li>`).join('')}</ol></section>
       </div><button class="btn ghost" data-act="reset">↻ Reset my demo data</button>`;
@@ -526,14 +532,17 @@
   }
 
   // ---------------------------------------------------------------- actions
-  function runReview(id) {
+  function runReview(id, mode) {
     const r = rec(id), x = r.inspection;
-    const d = E.judgeInspection(x.claim, x.evidence, x.openedAt, x.slaHours, NOW);
+    // mode lets judges test the other outcomes: minor wear in both photo sets (partial) or no handover photos (reject)
+    const claim = mode === 'partial' ? { ...x.claim, severity: 'minor' } : x.claim;
+    const ev = mode === 'partial' ? { ...x.evidence, handoverPhotos: [{ at: x.evidence.handoverPhotos[0].at, area: 'upper', showsCondition: 'clean' }] } : mode === 'reject' ? { handoverPhotos: [] } : x.evidence;
+    const d = E.judgeInspection(claim, ev, x.openedAt, x.slaHours, NOW);
     const next = { PASSED: 'INSPECTION_PASSED', PARTIAL: 'INSPECTION_PARTIAL', REJECTED: 'INSPECTION_REJECTED' }[d.outcome];
     r.item = E.transition('item', r.item, next, NOW, { why: d.reason });
     r.decision = { ...d, seq: log('reviewer-teamB', next, { item: id, refundPct: d.refundPct }).seq };
     if (d.refundPct > 0) issueLegs(id);
-    toast(`Review: ${d.outcome}, ${d.refundPct}% refund.`, 'good'); confetti();
+    toast(`Review: ${d.outcome}, ${d.refundPct}% refund.`, d.refundPct ? 'good' : ''); if (d.refundPct) confetti();
   }
   function issueLegs(id) {
     const r = rec(id), a = allocFor(id), o = orderOf(id); r.alloc = a; r.refundLegs = r.refundLegs || {};
@@ -562,6 +571,8 @@
   }
   const ACTIONS = {
     review: id => runReview(id),
+    reviewp: id => runReview(id, 'partial'),
+    reviewr: id => runReview(id, 'reject'),
     advance: id => advance(id),
     report: id => { const tk = 'CMP-' + (200000 + st.tickets.length * 11 + 7); st.tickets.push({ id: tk, item: id, at: new Date().toISOString() }); log('customer', 'CORRECTION_REQUESTED', { item: id, ticket: tk }); toast(`Thanks. Ticket ${tk}: a person checks this within 24 h.`); },
     appeal: v => { const r = S.RETURNERS.find(x => x.id === v); if (r.confirmedAbuse > 0) { st.appeals[v] = 'upheld'; toast(`${v}: friction stays (${r.confirmedAbuse} confirmed abuse cases).`); } else { st.appeals[v] = 'overturned'; toast(`${v}: appeal accepted, friction removed.`, 'good'); } log('reviewer', 'APPEAL_' + st.appeals[v].toUpperCase(), { customer: v }); },
@@ -579,6 +590,7 @@
         case 'theme': ui.theme = ui.theme === 'dark' ? 'light' : 'dark'; try { localStorage.setItem('rewind-theme', ui.theme); } catch (x) {} API.savePrefs({ theme: ui.theme }); break;
         case 'menu': ui.menu = !ui.menu; break;
         case 'info': ui.info = !ui.info; break;
+        case 'wf': ui.wf = v; break;
         case 'enter': return enterApp();
         case 'google': try { await API.google(); } catch (x) { ui.authErr = x.message; } break;
         case 'kind': ui.rep.kind = v; break;

@@ -300,7 +300,7 @@
       const e = E.eligibility(O, it, NOW, S.POLICIES);
       const inRet = st.items[it.id];
       let preview = '';
-      if (e.status !== 'NOT_ELIGIBLE' || it.id === 'C') {
+      if (e.status !== 'NOT_ELIGIBLE') {
         const a = E.allocate(O, { items: [{ itemId: it.id }] }, { order: 'proportional', now: NOW });
         preview = `<div class="small">Preview: refund about <b>${inr(a.refundable)}</b> → ${a.legs.map(l => `${inr(l.amount)} ${l.type}`).join(' + ')}</div>`;
       }

@@ -67,7 +67,7 @@
     const reasons = [];
     const cat = policies.categories[item.category];
     const sellerRule = (policies.sellerExceptions[item.sellerId] || []).find(r => r.applies(item));
-    if (item.giftOf) return { status: 'NOT_ELIGIBLE', reasons: [{ text: `Free gift with ${item.giftOf}. It goes back only together with that item.`, source: 'Bundle rule B-2' }] };
+    if (item.giftOf) return { status: 'NOT_ELIGIBLE', reasons: [{ text: `Free gift with the ${(order.items.find(i => i.id === item.giftOf) || {}).name || item.giftOf}. It goes back only together with that item.`, source: 'Bundle rule B-2' }] };
     const lastDay = addDays(order.deliveredAt, cat.windowDays);
     const left = Math.ceil(daysBetween(now, lastDay));
     if (left < 0) return { status: 'NOT_ELIGIBLE', lastDay, reasons: [{ text: `${cat.label} window of ${cat.windowDays} days ended.`, source: `Category policy ${cat.id}` }] };

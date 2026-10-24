@@ -51,6 +51,8 @@ Lakshmi orders 4 items from 3 sellers and pays by **card, wallet and a voucher**
 - **Receipt**: print or save a clean refund receipt as PDF
 - **Share status**: phone share sheet or WhatsApp
 - **Bigger text** for low-vision users
+- **Rule Lab** (judge area): sliders for card/UPI refund days, voucher validity, inspection deadline and return window; every verdict, date and message recalculates live — the Hour-12 curveball, handled on stage
+- **Guided tour**: “▶ Watch Lakshmi’s story” makes the app demo itself with a spotlight, captions and voice
 - **Motion everywhere**: page entrances, card lift, breathing status pills, star pops (respects "reduce motion")
 
 **Accessibility & inclusion:** 8 languages (English, Hindi, Telugu, Tamil, Kannada, Malayalam, Marathi, Bengali) · dark mode · voice in and out · bigger text · screen-reader labels · works on cheap phones and slow networks · never asks for OTP/PIN
@@ -61,6 +63,8 @@ Lakshmi orders 4 items from 3 sellers and pays by **card, wallet and a voucher**
 3. **Kurta** → Your money → **3 records, 1 answer** → Waiting
 4. **New return** → Bedsheet → Size → compare 3 options
 5. Account menu → **For judges** → *Duplicate refund* · *Tamper* → Restore · **Run all tests** → 56/56
+6. **Rule Lab**: drag *Card refund within* to 1 day → the kurta flips from Waiting to **Stuck**, with a trace step
+7. Home → **▶ Watch Lakshmi’s story** for the 60-second self-running tour
 
 ## Results
 Run `node tests/run.js`, or Judge console → **Run all tests**.

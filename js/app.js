@@ -64,12 +64,22 @@
     if (r.option === 'exchange' || r.option === 'replacement') status = idx >= 2 ? 'done' : status;
     return { cur, idx, status, fails: r.item.filter(h => h.state === 'PICKUP_FAILED').length, legs };
   }
+  // ---------------------------------------------------------------- RULE LAB: live business rules (judges can change them)
+  const RULE_DEFAULTS = { cardMax: 7, upiMax: 3, voucherDays: 30, slaHours: 72, windowDays: 10 };
+  function rules() { return Object.assign({}, RULE_DEFAULTS, (st && st.rules) || {}); }
+  function applyRules(r) {
+    r = r || rules();
+    E.EXPECTED.card.creditMax = r.cardMax; E.EXPECTED.card.creditMin = Math.min(5, r.cardMax);
+    E.EXPECTED.upi.creditMax = r.upiMax; E.EXPECTED.upi.creditMin = Math.min(1, r.upiMax);
+    ['FOOTWEAR', 'APPAREL', 'HOME'].forEach(k => { if (S.POLICIES.categories[k]) S.POLICIES.categories[k].windowDays = r.windowDays; });
+    if (st && st.items.A && st.items.A.inspection) st.items.A.inspection.slaHours = r.slaHours;
+  }
   function allocFor(id) {
     const r = rec(id); if (r.alloc) return r.alloc;
     const o = orderOf(id), prior = {};
     if (o === O) st.items.B.alloc.legs.forEach(l => { prior[l.instrumentId] = l.amount; });
     const dec = r.decision;
-    return E.allocate(o, { items: [{ itemId: id, ...(dec && dec.refundPct < 100 ? { deductionPct: 100 - dec.refundPct, deductionReason: dec.reason } : {}) }] }, { order: 'proportional', now: NOW }, prior);
+    return E.allocate(o, { items: [{ itemId: id, ...(dec && dec.refundPct < 100 ? { deductionPct: 100 - dec.refundPct, deductionReason: dec.reason } : {}) }] }, { order: 'proportional', now: NOW, minVoucherDays: rules().voucherDays }, prior);
   }
   function headline(id) {
     const r = rec(id), p = progress(id), it = itemOf(id);
@@ -139,7 +149,7 @@
         ${ui.user ? `<button class="avatar" data-act="menu" aria-label="Account menu" aria-expanded="${ui.menu}">${esc((ui.name || 'U')[0].toUpperCase())}</button>` : ''}
       </div>
       ${ui.menu ? `<div class="menu" role="menu"><div class="menu-h"><b>${esc(ui.name)}</b><small>${esc(ui.user.email)}</small><small id="saved">${API.mode === 'cloud' ? '☁︎ Cloud account' : '● This-device account (offline mode)'}</small></div>
-        <a href="#/reviews" role="menuitem">⭐ ${t('reviews')}</a><a href="#/judge" role="menuitem">🧪 ${t('judges')}</a>${installEvt ? '<button data-act="install" role="menuitem">⬇ Install app</button>' : ''}<button data-act="bigtext" role="menuitem">Aa ${ui.big ? 'Normal text' : 'Bigger text'}</button><button data-act="signout" role="menuitem">↪ ${t('signout')}</button></div>` : ''}
+        <a href="#/reviews" role="menuitem">⭐ ${t('reviews')}</a><a href="#/judge" role="menuitem">🧪 ${t('judges')}</a><button data-act="tour" role="menuitem">▶ Guided tour</button>${installEvt ? '<button data-act="install" role="menuitem">⬇ Install app</button>' : ''}<button data-act="bigtext" role="menuitem">Aa ${ui.big ? 'Normal text' : 'Bigger text'}</button><button data-act="signout" role="menuitem">↪ ${t('signout')}</button></div>` : ''}
     </header>`;
   }
   const TABS = [['home', 'home', 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z'], ['tracking', 'track_title', 'M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z'], ['start', 'new_return', 'M12 5v14M5 12h14'], ['reviews', 'reviews', 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z'], ['report', 'report_tab', 'M12 3l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6zM12 8v5M12 16v.5']];
@@ -232,6 +242,7 @@
     const prof = await API.profile(); ui.name = prof.name || 'Customer';
     st = (await API.loadState()) || seed();
     if (!st.v || st.v !== 3) st = seed();
+    applyRules();
     save(); ui.reviews = await API.reviews(); ui.reports = await API.reports();
     ui.chat = [{ who: 'bot', html: `${t('hi')} ${esc(ui.name.split(' ')[0])}! I can show your refund, track an item, explain an amount, start a return or switch language. Try a button below.`, chips: ['Where is my money?', 'Track my shoes', 'Why less money?', 'Start a return'] }];
     if (!location.hash.startsWith('#/') || location.hash === '#/') location.hash = '#/home';
@@ -259,7 +270,7 @@
         <h1>${t('your_return')} <span class="tag">${S.RETURN_ID}</span></h1>
         <p class="big-money"><span data-count="${tt.back}">₹0</span> <small>${t('back_so_far')} ${t('of')} ${inr(tt.total)}</small></p>
         <div class="bar"><i style="--w:${pct}%"></i></div>
-        <p class="scam">🔒 ${esc(t('scam'))}</p><p class="sim-chip">Simulated orders, couriers and payments</p></div>${heroArt()}</section>
+        <p class="scam">🔒 ${esc(t('scam'))}</p><p class="sim-chip">Simulated orders, couriers and payments</p><button class="tour-btn" data-act="tour">▶ Watch Lakshmi’s story · 60 s</button></div>${heroArt()}</section>
       <div class="cta-row"><a class="tile rise" href="#/start"><span class="t-ic">${ART.product('start')}</span><b>${t('start')}</b><small>${esc(t('tile_start_d'))}</small></a>
       <a class="tile rise" href="#/reviews"><span class="t-ic stars-ic">★★★★</span><b>${t('rate')}</b><small>${ui.reviews.length} ${esc(t('reviews_saved'))}</small></a>
       <button class="tile rise" data-act="chat"><span class="t-ic chat-ic"><i></i><i></i><i></i></span><b>${t('need')}</b><small>${esc(t('chat_ph'))}</small></button></div>
@@ -345,12 +356,12 @@
     const head = `<div class="wiz-h"><span class="pk-e big">${ART.item(w.id)}</span><div><b>${esc(it.name)}</b><div class="dots">${[1, 2, 3].map(n => `<i class="${n <= w.step ? 'on' : ''}"></i>`).join('')}</div></div></div>`;
     if (w.step === 1) return head + `<h2>${t('reason')}</h2><div class="reasons">${REASONS.map(([k, e, l]) => `<button class="reason ${w.reason === k ? 'on' : ''}" data-act="reason" data-v="${k}"><span>${e}</span>${l}</button>`).join('')}</div>`;
     if (w.step === 2) {
-      const est = E.allocate(o, { items: [{ itemId: w.id }] }, { order: 'proportional', now: NOW });
+      const est = E.allocate(o, { items: [{ itemId: w.id }] }, { order: 'proportional', now: NOW, minVoucherDays: rules().voucherDays });
       const cmp = E.compareOptions(it, w.reason === 'SIZE' ? 'SIZE' : w.reason === 'DEFECT' ? 'DEFECT' : 'OTHER', est, S.STOCK[w.id] || S.STOCK.A);
       return head + `<h2>${t('refund')} · ${t('exchange')} · ${t('replacement')}</h2><p class="muted small">${esc(cmp.note)}</p><div class="opts">${cmp.options.map(op => `<button class="opt ${w.option === op.id ? 'on' : ''}" data-act="option" data-v="${op.id}" ${/Out of stock/.test(op.time) ? 'disabled' : ''}><b>${esc(t(op.id))}</b><span>💰 ${esc(op.money)}</span><span>⏱ ${esc(op.time)}</span>${op.stockNote ? `<span>📦 ${esc(op.stockNote)}</span>` : ''}</button>`).join('')}</div>
         <p class="reco">💡 <b>Suggestion:</b> ${esc(cmp.why)}</p>`;
     }
-    const est = E.allocate(o, { items: [{ itemId: w.id }] }, { order: 'proportional', now: NOW });
+    const est = E.allocate(o, { items: [{ itemId: w.id }] }, { order: 'proportional', now: NOW, minVoucherDays: rules().voucherDays });
     const slots = ['Tomorrow, 9 AM – 12 PM', 'Tomorrow, 2 PM – 6 PM', 'Drop at a partner store (any time)'];
     return head + `<h2>Pickup</h2><div class="reasons">${slots.map((s, i) => `<button class="reason ${w.slot === i ? 'on' : ''}" data-act="slot" data-v="${i}"><span>${i === 2 ? '🏪' : '🚚'}</span>${s}</button>`).join('')}</div>
       ${w.option === 'refund' ? `<section class="panel"><h3>${t('money')}</h3><div class="money">${donut(est.legs, est.total, inr(est.total))}<ul class="legs">${est.legs.map(l => `<li><span class="sw" style="background:${PAY[l.type][0]}"></span><div><b>${inr(l.amount)}</b> → ${esc(l.label)}<small>Usually ${E.EXPECTED[l.type].creditMin}–${E.EXPECTED[l.type].creditMax} days after the check</small></div></li>`).join('')}</ul></div></section>` : `<p class="panel">No money moves: your ${esc(t(w.option)).toLowerCase()} is handed over when the agent collects this item.</p>`}
@@ -506,6 +517,7 @@
     const ring = tr ? `<svg viewBox="0 0 140 140" class="ring" role="img" aria-label="${tr.passed} of ${tr.total} passed"><circle cx="70" cy="70" r="54" fill="none" stroke="var(--line-soft)" stroke-width="16"/><circle cx="70" cy="70" r="54" fill="none" stroke="var(--mint)" stroke-width="16" stroke-dasharray="${339.3 * tr.rate} 340" transform="rotate(-90 70 70)" class="seg" style="--len:${339.3 * tr.rate}"/><text x="70" y="78" text-anchor="middle" class="d-big">${Math.round(tr.rate * 100)}%</text></svg>` : '';
     return `<h1>🧪 ${t('judges')}</h1><p class="muted">Hard-mode evidence: faults, tests, audit trail, fairness, threat model and data card. Synthetic data, clearly labelled.</p>
       <div class="jgrid">
+      ${ruleLab()}
       <section class="panel"><h3>Inject a fault</h3><div class="faults">${faults.map(([k, n]) => `<button class="fault ${st.faults[k] ? 'on' : ''}" data-act="fault" data-v="${k}" aria-pressed="${!!st.faults[k]}">${n}</button>`).join('')}</div>
         ${ui.malformed ? `<label class="field">Event JSON<textarea id="evjson" rows="3">{"machine":"item","to":"received","at":"yesterday","amount":-5}</textarea></label><button class="btn primary sm" data-act="submitEvent">Submit event</button>` : ''}
         <ol class="flog">${st.faultLog.slice(-8).reverse().map(l => `<li class="${l.ok ? 'ok' : 'bad'}"><b>${esc(l.title)}</b> ${esc(l.text)}</li>`).join('') || '<li class="muted">No faults yet. Try one, then check the customer screens.</li>'}</ol></section>
@@ -526,6 +538,80 @@
       <section class="panel"><h3>Data card · ${S.DATA_CARD.length} planted conflicts</h3><ol class="small">${S.DATA_CARD.map(d => `<li><b>${d[0]}</b> ${esc(d[1])} → <i>${esc(d[2])}</i></li>`).join('')}</ol></section>
       </div><button class="btn ghost" data-act="reset">↻ Reset my demo data</button>`;
   }
+  const RULE_UI = [['cardMax', 'Card refund reaches bank within', 1, 15, 'days'], ['upiMax', 'UPI refund within', 1, 7, 'days'], ['voucherDays', 'Refunded voucher stays valid at least', 7, 90, 'days'], ['slaHours', 'Inspection dispute decided within', 24, 168, 'hours'], ['windowDays', 'Return window (shoes, clothes, home)', 3, 30, 'days']];
+  function ruleImpact() {
+    const out = [], r = rules();
+    const card = st.items.B.refundLegs && Object.entries(st.items.B.refundLegs).find(([pm]) => payOf(O, pm).type === 'card');
+    if (card) { const leg = legsOf('B').find(l => l.pm === card[0]); if (leg && leg.state !== 'CREDITED_CONFIRMED') { const v = verdictOf('B', leg); out.push(['Kurta card refund', `${t(v.verdict.toLowerCase())}: ${v.why}`, v.verdict]); } }
+    const vl = allocFor('A').legs.find(l => l.type === 'voucher'); if (vl && vl.voucherExpiry) out.push(['Shoes voucher part', `${inr(vl.amount)} comes back as a voucher valid till ${day(vl.voucherExpiry.at)}`, 'DONE']);
+    if (st.items.A.inspection && !st.items.A.decision) out.push(['Shoes inspection', `decision due ${when(E.addDays(st.items.A.inspection.openedAt, r.slaHours / 24))}`, 'WAITING']);
+    const S2 = S.ORDER2 || null; if (S2) { const it = S2.items.find(x => x.id === 'S'); if (it) { const e = E.eligibility(S2, it, NOW, S.POLICIES); out.push(['Bedsheet return', e.status === 'NOT_ELIGIBLE' ? 'window closed' : `${e.status === 'CONDITIONAL' ? 'allowed, with a condition' : 'allowed'} · last day ${day(e.lastDay)}`, e.status === 'NOT_ELIGIBLE' ? 'STUCK' : 'DONE']); } }
+    return out;
+  }
+  function ruleLab() {
+    const r = rules(), changed = Object.keys(RULE_DEFAULTS).some(k => r[k] !== RULE_DEFAULTS[k]);
+    return `<section class="panel rulelab"><div class="row between"><h3>⚙︎ Rule Lab: change the rules live</h3>${changed ? '<button class="btn ghost sm" data-act="rulereset">Reset rules</button>' : '<span class="chip c-high">Brief defaults</span>'}</div>
+      <p class="small muted">Hour-12 curveball? Move a slider. Every status, date and message in the app is recalculated from the new rule; nothing is hard-coded on screen.</p>
+      <div class="rules">${RULE_UI.map(([k, l, mn, mx, u]) => `<label class="rule"><span>${l}</span><b><output id="o-${k}">${r[k]}</output> ${r[k] === 1 ? u.replace(/s$/, '') : u}${r[k] !== RULE_DEFAULTS[k] ? ` <s>${RULE_DEFAULTS[k]}</s>` : ''}</b><input type="range" min="${mn}" max="${mx}" value="${r[k]}" data-rule="${k}" aria-label="${l}"></label>`).join('')}</div>
+      <h3 class="small-h">Live impact</h3><ul class="impact">${ruleImpact().map(([a, b, v]) => `<li class="i-${v.toLowerCase()}"><b>${esc(a)}</b><span>${esc(b)}</span></li>`).join('')}</ul></section>`;
+  }
+  document.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.rule; if (k) { const o = document.getElementById('o-' + k); if (o) o.textContent = e.target.value; } });
+  document.addEventListener('change', e => {
+    const k = e.target.dataset && e.target.dataset.rule; if (!k) return;
+    st.rules = Object.assign({}, st.rules || {}, { [k]: +e.target.value }); applyRules();
+    log('judge', 'RULE_CHANGED', { rule: k, value: +e.target.value }); save(); render();
+    const el = document.querySelector('.rulelab'); if (el) el.classList.add('flash');
+  });
+
+  // ---------------------------------------------------------------- GUIDED TOUR: the app demos itself
+  const TOUR = [
+    { h: '#/home', sel: '.hero', say: 'This is Lakshmi. One order, four items, three sellers, paid by card, wallet and a voucher. Here is how much of her money is back so far.' },
+    { h: '#/item/A', sel: '.photos', say: 'Her shoes: the courier said unreachable, but his GPS was almost two kilometres away. The warehouse said used. Her handover photos go to a separate review team.' },
+    { h: '#/item/A', sel: '[data-act=review]', say: 'The reviewer decides. Full refund.', act: () => { if (st.items.A.inspection && !st.items.A.decision) ACTIONS.review('A'); } },
+    { h: '#/item/B', sel: '.money', say: 'The kurta refund is split across card, wallet and voucher, exact to the paisa.' },
+    { h: '#/item/B', sel: '.three', say: 'The bank says reversed. The seller says pending. Three records, one answer: waiting, with a date.' },
+    { h: '#/item/B', sel: '.st-tools', say: 'She can hear it read aloud, add a reminder, print a receipt, or share it.' },
+    { h: '#/start', sel: '.picks', say: 'Starting a new return? Every item is checked first, so she knows the outcome before she asks.' },
+    { h: '#/shipping', sel: 'main section, main .panel', say: 'Every return travels from home, in green, to the warehouse, in red.' },
+    { h: '#/judge', sel: '.rulelab', say: 'And judges can change the rules live. Every date and verdict in the app updates instantly.' },
+  ];
+  let tourI = -1, tourTimer = null;
+  function tourBox() {
+    let o = document.getElementById('tour');
+    if (!o) { o = document.createElement('div'); o.id = 'tour'; o.innerHTML = '<div class="t-spot"></div><div class="t-card" role="dialog" aria-live="polite"><div class="t-top"><b class="t-n"></b><button class="t-x" aria-label="Stop tour">✕</button></div><p class="t-say"></p><div class="t-bar"><i></i></div><div class="t-btns"><button class="btn ghost sm t-prev">← Back</button><button class="btn primary sm t-next">Next →</button></div></div>'; document.body.appendChild(o);
+      o.querySelector('.t-x').onclick = stopTour; o.querySelector('.t-next').onclick = () => tourGo(tourI + 1); o.querySelector('.t-prev').onclick = () => tourGo(Math.max(0, tourI - 1)); }
+    return o;
+  }
+  function startTour() { tourBox().classList.add('on'); tourGo(0); }
+  function stopTour() { clearTimeout(tourTimer); tourI = -1; try { speechSynthesis.cancel(); } catch (x) {} const o = document.getElementById('tour'); if (o) o.classList.remove('on'); }
+  function spot() {
+    const o = document.getElementById('tour'), s = TOUR[tourI]; if (!o || !s) return;
+    const el = document.querySelector(s.sel), sp = o.querySelector('.t-spot');
+    if (!el) { sp.style.opacity = 0; return; }
+    const r = el.getBoundingClientRect(), pad = 8;
+    Object.assign(sp.style, { opacity: 1, left: r.left - pad + 'px', top: r.top - pad + 'px', width: r.width + pad * 2 + 'px', height: Math.min(r.height + pad * 2, innerHeight * .6) + 'px' });
+    o.querySelector('.t-card').classList.toggle('t-up', r.top + r.height / 2 > innerHeight * .55);
+  }
+  function tourGo(i) {
+    clearTimeout(tourTimer); try { speechSynthesis.cancel(); } catch (x) {}
+    if (i >= TOUR.length) { stopTour(); confetti(); toast('That’s returnease. Wrong pick. Right fix.', 'good'); return; }
+    tourI = i; const s = TOUR[i], o = tourBox();
+    o.querySelector('.t-n').textContent = `${i + 1} / ${TOUR.length}`; o.querySelector('.t-say').textContent = s.say;
+    o.querySelector('.t-bar i').style.width = ((i + 1) / TOUR.length * 100) + '%';
+    o.querySelector('.t-next').textContent = i === TOUR.length - 1 ? 'Finish ✓' : 'Next →';
+    if (location.hash !== s.h) location.hash = s.h;
+    setTimeout(() => {
+      const el = document.querySelector(s.sel); if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      setTimeout(() => { spot(); if (s.act) { s.act(); save(); render(); setTimeout(spot, 400); } }, 650);
+    }, 450);
+    let spoke = false;
+    try { if ('speechSynthesis' in window && speechSynthesis.getVoices().length) { const u = new SpeechSynthesisUtterance(s.say); u.lang = 'en-IN'; u.rate = 1; u.onend = () => { tourTimer = setTimeout(() => tourGo(tourI + 1), 900); }; speechSynthesis.speak(u); spoke = true; } } catch (x) {}
+    if (!spoke) tourTimer = setTimeout(() => tourGo(tourI + 1), Math.max(4200, s.say.length * 55));
+  }
+  window.addEventListener('scroll', () => { if (tourI >= 0) spot(); }, { passive: true });
+  window.addEventListener('resize', () => { if (tourI >= 0) spot(); });
+  document.addEventListener('keydown', e => { if (tourI >= 0 && e.key === 'Escape') stopTour(); });
+
   function fault(title, text, ok) { st.faultLog.push({ title, text, ok }); log('judge', 'FAULT_' + title.toUpperCase().replace(/\W+/g, '_'), { text }); }
   function injectFault(k) {
     if (k === 'stale' || k === 'timeout') { st.faults[k] = !st.faults[k]; fault(k, st.faults[k] ? 'Kurta card refund now shows “status unknown”, low confidence. Open My return → Kurta.' : 'Cleared.', true); }
@@ -598,6 +684,8 @@
       switch (a) {
         case 'theme': ui.theme = ui.theme === 'dark' ? 'light' : 'dark'; try { localStorage.setItem('rewind-theme', ui.theme); } catch (x) {} API.savePrefs({ theme: ui.theme }); break;
         case 'menu': ui.menu = !ui.menu; break;
+        case 'rulereset': st.rules = {}; applyRules(); log('judge', 'RULES_RESET', {}); save(); toast('Rules back to the brief’s defaults.', 'good'); break;
+        case 'tour': ui.menu = false; ui.chatOpen = false; return startTour();
         case 'speak': return speak(v);
         case 'remind': return remind(v);
         case 'receipt': log('customer', 'RECEIPT_PRINTED', { item: v }); save(); setTimeout(() => window.print(), 50); return;
@@ -651,9 +739,9 @@
         }
         case 'fault': injectFault(v); save(); break;
         case 'submitEvent': { let errs; try { errs = E.validateEvent(JSON.parse($('#evjson').value)); } catch (x) { errs = ['Not valid JSON']; } fault('Malformed input', errs.length ? 'Rejected: ' + errs.join('; ') : 'Valid shape; still guarded by the state machine.', true); ui.malformed = false; save(); break; }
-        case 'tests': ui.tests = TestHarness.runAll(E, S); log('judge', 'TESTS_RUN', { passed: ui.tests.passed, total: ui.tests.total }); save(); break;
+        case 'tests': applyRules(RULE_DEFAULTS); ui.tests = TestHarness.runAll(E, S); applyRules(); log('judge', 'TESTS_RUN', { passed: ui.tests.passed, total: ui.tests.total }); save(); break;
         case 'restore': { const x = st.audit.find(y => y.seq === st.tamperBackup.seq); x.data = st.tamperBackup.data; st.tamperBackup = null; toast('Restored; chain verifies again.', 'good'); save(); break; }
-        case 'reset': st = seed(); save(); toast('Demo data reset to 24 Oct, 10:00 AM.'); break;
+        case 'reset': st = seed(); applyRules(); save(); toast('Demo data reset to 24 Oct, 10:00 AM.'); break;
         default: if (ACTIONS[a]) { act(a, v); save(); }
       }
     } catch (err) { toast(err.message, 'bad'); }

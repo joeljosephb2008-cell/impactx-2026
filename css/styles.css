@@ -451,7 +451,7 @@ main.page-in { animation: pagein .45s var(--ease) both; }
   .pick .pk-b { flex: 1 1 calc(100% - 52px - .9rem); }
   .pick > .pill { margin-left: calc(52px + .9rem); }
 }
-/* round 2: status tools, proof photos, mic */
+/* status tools, proof photos, mic */
 .st-tools { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .8rem; }
 .proof .row h3 { margin: 0; }
 .cam { position: relative; cursor: pointer; }
@@ -474,7 +474,7 @@ html[data-big="1"] main { zoom: 1.15; }
   main::before { content: "returnease · refund receipt · Simulated order, for demo"; display: block; font-weight: 800; margin-bottom: 1rem; }
 }
 
-/* ================================================================ MOTION EVERYWHERE (round 2)
+/* ================================================================ MOTION EVERYWHERE
    Entrance animations play only when you arrive on a page (main.page-in), so taps never flicker. */
 main.page-in .rise:nth-child(2) { animation-delay: .05s; } main.page-in .rise:nth-child(3) { animation-delay: .1s; }
 main.page-in .rise:nth-child(4) { animation-delay: .15s; } main.page-in .rise:nth-child(5) { animation-delay: .2s; }

@@ -43,7 +43,7 @@ Lakshmi orders 4 items from 3 sellers and pays by **card, wallet and a voucher**
 ## Features
 **Customer app:** welcome + sign-in · tracking · returns (refund / exchange / replacement side by side) · exchange · checkout with refund preference · shipping (home → warehouse) · reviews · fraud reporting · chat assistant
 
-**Added in round 2**
+**Latest additions**
 - **Installable + offline** (PWA): add to home screen; works with no network
 - **Voice**: speak your question in your language; **Read aloud** on every status
 - **Handover proof photo**: camera capture, stamped with time + SHA-256 in the audit log

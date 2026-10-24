@@ -763,7 +763,7 @@
   window.addEventListener('offline', () => { if (st) { st.faults.offline = true; render(); } });
   window.addEventListener('online', () => { if (st && st.faults.offline) { injectFault('offline'); save(); render(); } });
 
-  // ---------------------------------------------------------------- round 2: voice, share, proof photos, install
+  // ---------------------------------------------------------------- voice, share, proof photos, install
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const LOCALE = { en: 'en-IN', hi: 'hi-IN', te: 'te-IN', ta: 'ta-IN', kn: 'kn-IN', ml: 'ml-IN', mr: 'mr-IN', bn: 'bn-IN' };
   let installEvt = null;

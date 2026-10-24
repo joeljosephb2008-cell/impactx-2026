@@ -241,7 +241,7 @@
   function retCard(id) {
     const it = itemOf(id), p = progress(id), h = headline(id);
     return `<a class="item-card rise" href="#/item/${id}" style="--c:${it.color}">
-      <div class="ic-emoji">${ART.item(id)}</div>
+      <div class="ic-emoji">${pic(id)}</div>
       <div class="ic-body"><div class="row between"><b>${esc(it.name)}</b>${pill(p.status)}</div>
         <p class="ic-msg">${esc(h.msg)}</p>${miniTrack(p)}
         <div class="ic-steps"><span>${t('step_req')}</span><span>${t('step_arr')}</span></div></div></a>`;
@@ -301,7 +301,7 @@
       <p class="small">Review due <b>${when(E.addDays(r.inspection.openedAt, 3))}</b>. Possible outcomes: full refund, partial with reason, or not accepted (item sent back free).</p>
       <button class="btn primary" data-act="review" data-v="${id}">Demo: reviewer decides now</button></section>`;
     if (r.demo && E.current(r.item).state !== 'CLOSED' && p.idx < 4 && !(r.option !== 'refund' && p.idx >= 2)) action = `<section class="panel rise"><button class="btn ghost" data-act="advance" data-v="${id}">Demo: move to next step →</button><p class="small muted">Simulates the courier, warehouse and bank updates.</p></section>`;
-    return `<section class="item-hero rise" style="--c:${it.color}"><div class="ih-emoji">${ART.item(id)}</div><div><h1>${esc(it.name)}</h1><p class="muted">${esc(it.seller)} · ${pill(p.status)}</p></div></section>
+    return `<section class="item-hero rise" style="--c:${it.color}"><div class="ih-emoji">${pic(id)}</div><div><h1>${esc(it.name)}</h1><p class="muted">${esc(it.seller)} · ${pill(p.status)}</p></div></section>
       <section class="panel status rise"><p class="status-msg">${esc(h.msg)}</p>
         <details class="why"><summary>${t('why')}</summary><p>${esc(h.why)}</p><div class="chips"><span class="chip c-${h.conf}">Confidence: ${h.conf}</span><span class="chip">Source: ${esc(h.src)}</span><span class="chip">As of ${when(h.at)}${h.stale ? ' (old data)' : ''}</span></div>
         <button class="btn ghost sm" data-act="report" data-v="${id}">${t('report')}</button></details></section>
@@ -420,24 +420,40 @@
   // ---------------------------------------------------------------- REVIEWS
   const TAGS = ['Pickup on time', 'Refund was fast', 'Clear updates', 'Courier problem', 'Refund was slow', 'Unfair inspection', 'Product as described', 'Product quality poor'];
   function stars(name, val) { return `<div class="stars" role="radiogroup" aria-label="${esc(name)}">${[1, 2, 3, 4, 5].map(n => `<button type="button" role="radio" aria-checked="${val === n}" aria-label="${n} star" class="${n <= (val || 0) ? 'on' : ''}" data-act="star" data-k="${name}" data-v="${n}">★</button>`).join('')}</div>`; }
+  // Product photos: put a file at img/products/<id>.jpg and list the id here. Others fall back to the illustration.
+  const PHOTOS = new Set([]);
+  const pic = id => PHOTOS.has(id) ? `<img src="img/products/${id}.jpg" alt="${esc(itemOf(id).name)}" class="photo" loading="lazy">` : ART.item(id);
+  const GOOD_TAGS = ['Pickup on time', 'Refund was fast', 'Clear updates', 'Product as described'];
+  const BAD_TAGS = ['Courier problem', 'Refund was slow', 'Unfair inspection', 'Confusing updates'];
+  const FACES = ['Bad', 'Poor', 'Okay', 'Good', 'Great'];
   function vReviews(route) {
     const ids = ['A', 'B', ...st.extra.flatMap(r => Object.keys(r.items))];
-    const sel = route[1] || ui.revItem || ids[0]; ui.revItem = sel;
-    const f = ui.revForm && ui.revForm.id === sel ? ui.revForm : (ui.revForm = { id: sel, ok: null, rs: 0, ps: 0, tags: [], comment: '' });
-    const it = itemOf(sel);
-    const mine = ui.reviews.map(r => `<li class="rv rise"><span class="pk-e">${ART.item(r.item_id)}</span><div><b>${esc(r.item_name || r.item_id)}</b> <span class="muted small">${day(r.created_at)}</span>
-      <div class="small">${r.return_ok ? '✅ Return done with no problem' : '⚠️ Had a problem'} · Return ${'★'.repeat(r.return_stars || 0)} · Product ${'★'.repeat(r.product_stars || 0)}</div>
-      ${(r.tags || []).length ? `<div class="chips">${r.tags.map(x => `<span class="chip">${esc(x)}</span>`).join('')}</div>` : ''}${r.comment ? `<p class="small">“${esc(r.comment)}”</p>` : ''}</div></li>`).join('');
-    return `<h1>${t('reviews')}</h1>
-      <div class="rv-items">${ids.map(id => `<a href="#/reviews/${id}" class="rv-pick ${id === sel ? 'on' : ''}">${ART.item(id)} ${esc(itemOf(id).short)}</a>`).join('')}</div>
-      <form class="panel rise" id="revform"><h2>${ART.item(sel)} ${esc(it.name)}</h2>
-        <p class="q">${t('return_ok')}</p><div class="yn"><button type="button" class="${f.ok === true ? 'on' : ''}" data-act="ok" data-v="1">👍 ${t('yes')}</button><button type="button" class="${f.ok === false ? 'on' : ''}" data-act="ok" data-v="0">👎 ${t('no')}</button></div>
-        <p class="q">${t('return_exp')}</p>${stars('rs', f.rs)}
-        <p class="q">${t('product')}</p>${stars('ps', f.ps)}
-        <div class="chips pickable">${TAGS.map(x => `<button type="button" class="chip ${f.tags.includes(x) ? 'on' : ''}" data-act="tag" data-v="${esc(x)}">${esc(x)}</button>`).join('')}</div>
-        <label class="field">Comment (optional)<textarea id="rvc" maxlength="500" rows="2">${esc(f.comment)}</textarea></label>
-        <button class="btn primary big block" data-act="submitrev">${t('submit')}</button></form>
-      <h2>My reviews</h2><ul class="rvs">${mine || '<li class="muted">No reviews yet.</li>'}</ul>`;
+    if (route[1] && ids.includes(route[1]) && ui.revOpen === undefined) ui.revOpen = route[1];
+    const latest = id => ui.reviews.find(r => r.item_id === id);
+    const cards = ids.map((id, i) => {
+      const r = latest(id), it = itemOf(id);
+      return `<button class="rv-card rise" style="--c:${it.color};animation-delay:${i * .06}s" data-act="openrev" data-v="${id}">
+        <span class="rv-photo">${pic(id)}</span><b>${esc(it.name)}</b>
+        ${r ? `<span class="rv-done"><span class="rv-stars">${'★'.repeat(r.return_stars || 0)}<i>${'★'.repeat(5 - (r.return_stars || 0))}</i></span>${r.return_ok ? 'No problems' : 'Had a problem'}</span>` : `<span class="rv-cta">${t('rate')} →</span>`}</button>`;
+    }).join('');
+    return `<h1>${t('reviews')}</h1><p class="muted">Tap an item. It takes 10 seconds.</p><div class="rv-grid">${cards}</div>${ui.revOpen ? revSheet(ui.revOpen) : ''}`;
+  }
+  function revSheet(id) {
+    const it = itemOf(id);
+    const f = ui.revForm && ui.revForm.id === id ? ui.revForm : (ui.revForm = { id, ok: null, rs: 0, ps: 0, tags: [], comment: '', more: false });
+    const tags = f.ok === false ? BAD_TAGS : GOOD_TAGS;
+    return `<div class="modal sheet-modal" role="dialog" aria-modal="true" aria-label="Review ${esc(it.name)}"><form class="sheet" id="revform">
+      <button type="button" class="ico close" data-act="closerev" aria-label="Close">✕</button>
+      <div class="sheet-head"><span class="rv-photo big">${pic(id)}</span><div><b>${esc(it.name)}</b><small class="muted block">${esc(it.seller)}</small></div></div>
+      <p class="q">${t('return_ok')}</p>
+      <div class="yn big"><button type="button" class="${f.ok === true ? 'on yes' : ''}" data-act="ok" data-v="1"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>${t('yes')}</button>
+        <button type="button" class="${f.ok === false ? 'on no' : ''}" data-act="ok" data-v="0"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>${t('no')}</button></div>
+      ${f.ok === null ? '' : `<div class="step-in"><p class="q">${t('return_exp')}</p>
+        <div class="stars big" role="radiogroup" aria-label="${esc(t('return_exp'))}">${[1, 2, 3, 4, 5].map(n => `<button type="button" role="radio" aria-checked="${f.rs === n}" class="${n <= f.rs ? 'on' : ''}" data-act="star" data-k="rs" data-v="${n}" aria-label="${n} – ${FACES[n - 1]}">★</button>`).join('')}<span class="star-word">${f.rs ? FACES[f.rs - 1] : ''}</span></div>
+        <div class="chips pickable">${tags.map(x => `<button type="button" class="chip ${f.tags.includes(x) ? 'on' : ''}" data-act="tag" data-v="${esc(x)}">${esc(x)}</button>`).join('')}</div>
+        ${f.more ? `<p class="q">${t('product')} <span class="muted small">(optional)</span></p>${stars('ps', f.ps)}<label class="field">${esc(t('comment'))}<textarea id="rvc" maxlength="500" rows="2">${esc(f.comment)}</textarea></label>` : `<button type="button" class="linkish" data-act="revmore">+ Rate the product or add a comment</button>`}
+        <button class="btn primary big block" data-act="submitrev" ${f.rs ? '' : 'disabled'}>${t('submit')}</button></div>`}
+    </form></div>`;
   }
 
   // ---------------------------------------------------------------- CHAT ASSISTANT (rule-based, grounded in the user's own data)
@@ -592,14 +608,18 @@
           st.extra.push({ id, orderId: orderOf(w.id).id, items: { [w.id]: { reason: w.reason, option: w.option, demo: true, item: h1, refundLegs: {}, pickupSlot: ['tomorrow 9 AM–12 PM', 'tomorrow 2–6 PM', 'drop-off'][w.slot] } } });
           log('customer', 'RETURN_CREATED', { id, item: w.id, option: w.option, reason: w.reason }); ui.wiz = null; confetti(); toast(`${id} created. Pickup booked.`, 'good'); save(); location.hash = '#/item/' + w.id; return;
         }
-        case 'ok': ui.revForm.ok = v === '1'; break;
+        case 'ok': ui.revForm.ok = v === '1'; ui.revForm.tags = []; break;
         case 'star': ui.revForm[el.dataset.k] = +v; break;
         case 'tag': { const tg = ui.revForm.tags; const i = tg.indexOf(v); i >= 0 ? tg.splice(i, 1) : tg.push(v); break; }
+        case 'openrev': ui.revOpen = v; ui.revForm = null; break;
+        case 'closerev': ui.revOpen = null; ui.revForm = null; if (location.hash.split('/').length > 2) history.replaceState(null, '', '#/reviews'); break;
+        case 'revmore': ui.revForm.more = true; break;
         case 'submitrev': {
-          const f = ui.revForm; f.comment = ($('#rvc').value || '').slice(0, 500);
-          if (f.ok === null || !f.rs || !f.ps) { toast('Please answer yes/no and give both star ratings.', 'bad'); return; }
-          await API.addReview({ item_id: f.id, item_name: itemOf(f.id).name, return_ok: f.ok, return_stars: f.rs, product_stars: f.ps, tags: f.tags, comment: f.comment });
-          ui.reviews = await API.reviews(); ui.revForm = null; log('customer', 'REVIEW_SAVED', { item: f.id }); save(); confetti(); toast(t('thanks'), 'good'); break;
+          const f = ui.revForm; const c = $('#rvc'); if (c) f.comment = c.value.slice(0, 500);
+          if (f.ok === null || !f.rs) { toast('Answer yes/no and pick stars.', 'bad'); return; }
+          await API.addReview({ item_id: f.id, item_name: itemOf(f.id).name, return_ok: f.ok, return_stars: f.rs, product_stars: f.ps || null, tags: f.tags, comment: f.comment });
+          ui.reviews = await API.reviews(); log('customer', 'REVIEW_SAVED', { item: f.id }); ui.revOpen = null; ui.revForm = null; save(); confetti(); toast(t('thanks'), 'good');
+          if (location.hash.split('/').length > 2) history.replaceState(null, '', '#/reviews'); break;
         }
         case 'fault': injectFault(v); save(); break;
         case 'submitEvent': { let errs; try { errs = E.validateEvent(JSON.parse($('#evjson').value)); } catch (x) { errs = ['Not valid JSON']; } fault('Malformed input', errs.length ? 'Rejected: ' + errs.join('; ') : 'Valid shape; still guarded by the state machine.', true); ui.malformed = false; save(); break; }
@@ -623,7 +643,7 @@
       catch (err) { ui.authErr = err.message; render(); }
     }
   });
-  window.addEventListener('hashchange', () => { ui.menu = false; if (!location.hash.startsWith('#/start/')) ui.wiz = ui.wiz && location.hash.startsWith('#/start') ? null : ui.wiz; render(); window.scrollTo(0, 0); });
+  window.addEventListener('hashchange', () => { ui.menu = false; { const m = location.hash.match(/^#\/reviews\/(\w+)/); ui.revOpen = m ? m[1] : undefined; ui.revForm = null; } if (!location.hash.startsWith('#/start/')) ui.wiz = ui.wiz && location.hash.startsWith('#/start') ? null : ui.wiz; render(); window.scrollTo(0, 0); });
   window.addEventListener('offline', () => { if (st) { st.faults.offline = true; render(); } });
   window.addEventListener('online', () => { if (st && st.faults.offline) { injectFault('offline'); save(); render(); } });
 

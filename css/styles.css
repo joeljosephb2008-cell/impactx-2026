@@ -315,7 +315,7 @@ main.wide { max-width: 1240px; }
 .info-i { font: italic 900 1.15rem Georgia, serif; }
 
 /* wordmark logo: lowercase, no icon */
-.wordmark { font-weight: 900; font-size: 1.45rem; letter-spacing: -.06em; line-height: 1; color: var(--ink); display: inline-flex; align-items: baseline; white-space: nowrap; }
+.wordmark { font-weight: 900; font-size: 1.45rem; letter-spacing: -.01em; line-height: 1; color: var(--ink); display: inline-flex; align-items: baseline; white-space: nowrap; }
 .wordmark em { font-style: normal; background: linear-gradient(90deg, var(--tomato), var(--grape)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .wordmark i { width: .32em; height: .32em; border-radius: 50%; background: var(--tomato); margin-left: .08em; display: inline-block; animation: blink 2.4s ease-in-out infinite; }
 @keyframes blink { 50% { transform: translateY(-.25em); background: var(--sun); } }

@@ -599,3 +599,4 @@ body, .panel, .top, .tabbar, .item-card, .track-card { transition: background-co
 .sim-note { font-size: .78rem; color: var(--muted); margin-top: 1rem; text-align: center; }
 .sheet.consent { display: block; } .sheet.consent h3 { margin-bottom: .2rem; }
 @media (max-width: 420px) { .consent .cgrid { grid-template-columns: 1fr; } }
+.w-btns { display: flex; flex-direction: column; gap: .35rem; }

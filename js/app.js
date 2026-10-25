@@ -80,7 +80,7 @@
   function vStores() {
     const S0 = storesState();
     const ways = [
-      ['gmail', '📧', 'Order emails (Gmail)', S0.gmail ? `Connected · last scan ${when(S0.at)}` : 'Read-only: only order and return emails from shops', S0.gmail ? '<button class="btn ghost sm" data-act="rescan">Scan again</button>' : '<button class="btn primary sm" data-act="gmail">Connect</button>'],
+      ['gmail', '📧', 'Order emails (Gmail)', S0.gmail ? `Connected · last scan ${when(S0.at)}` : 'Read-only: only order and return emails from shops', S0.gmail ? '<span class="w-btns"><button class="btn ghost sm" data-act="gmail">Permissions</button><button class="btn ghost sm" data-act="rescan">Scan again</button></span>' : '<button class="btn primary sm" data-act="gmail">Connect</button>'],
       ['sms', '💬', 'Order SMS (Android)', 'Reads delivery and refund texts from stores, with your permission', '<span class="chip">Android app</span>'],
       ['partner', '🤝', 'Store partner link', 'Stores send your orders to us directly (how it works at scale)', '<span class="chip">For stores</span>'],
       ['manual', '⌨️', 'Add by order number', 'Type the order number from any store’s email or app', '<a class="btn ghost sm" href="#add-order">Add</a>'],

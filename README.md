@@ -44,6 +44,7 @@ Lakshmi orders 4 items from 3 sellers and pays by **card, wallet and a voucher**
 **Customer app:** welcome + sign-in · tracking · returns (refund / exchange / replacement side by side) · exchange · checkout with refund preference · shipping (home → warehouse) · reviews · fraud reporting · chat assistant
 
 **Latest additions**
+- **Your stores** (where the orders come from): connect order emails read-only (Gmail), order SMS on Android, store partner links, or add by order number. Consent sheet shows exactly what is and isn’t read; never asks for a store password or OTP; disconnect deletes the copied data. Simulated in the prototype.
 - **Installable + offline** (PWA): add to home screen; works with no network
 - **Voice**: speak your question in your language; **Read aloud** on every status
 - **Handover proof photo**: camera capture, stamped with time + SHA-256 in the audit log

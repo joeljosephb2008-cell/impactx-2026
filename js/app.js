@@ -64,6 +64,49 @@
     if (r.option === 'exchange' || r.option === 'replacement') status = idx >= 2 ? 'done' : status;
     return { cur, idx, status, fails: r.item.filter(h => h.state === 'PICKUP_FAILED').length, legs };
   }
+  // ---------------------------------------------------------------- YOUR STORES: where the orders come from (simulated in the prototype)
+  const STORES = [
+    { id: 'shopkart', name: 'ShopKart', kind: 'Marketplace', color: '#5B8CFF', order: 'OD-77120' },
+    { id: 'bazaarnow', name: 'BazaarNow', kind: 'Marketplace', color: '#FF4D2E', order: 'OD-78811' },
+    { id: 'stylemart', name: 'StyleMart', kind: 'Fashion store', color: '#B26BFF', order: null },
+    { id: 'quickcart', name: 'QuickCart', kind: 'Groceries & home', color: '#3DDC97', order: null },
+  ];
+  function storesState() { if (!st.stores) st.stores = { gmail: true, sms: false, at: '2026-10-21T06:00:00.000Z', list: STORES.map(x => ({ id: x.id, at: '2026-10-21T06:00:00.000Z' })) }; return st.stores; }
+  function storeOrders(sid) { const x = STORES.find(y => y.id === sid); const o = [O, O2].find(z => z.id === x.order); return o ? o.items.length : 0; }
+  function storeStrip() {
+    const S0 = storesState(), n = S0.list.length, items = S0.list.reduce((a, x) => a + storeOrders(x.id), 0);
+    return `<a class="store-strip rise" href="#/stores"><span class="ss-dots">${S0.list.slice(0, 4).map(x => { const s = STORES.find(y => y.id === x.id); return `<i style="--c:${s.color}">${s.name[0]}</i>`; }).join('')}</span><span class="ss-t"><b>${n ? `${items} items from ${n} connected stores` : 'Connect your stores'}</b><small>${S0.gmail ? 'Synced from your order emails (read-only)' : 'Bring every order into one place'}</small></span><span class="p-go">→</span></a>`;
+  }
+  function vStores() {
+    const S0 = storesState();
+    const ways = [
+      ['gmail', '📧', 'Order emails (Gmail)', S0.gmail ? `Connected · last scan ${when(S0.at)}` : 'Read-only: only order and return emails from shops', S0.gmail ? '<button class="btn ghost sm" data-act="rescan">Scan again</button>' : '<button class="btn primary sm" data-act="gmail">Connect</button>'],
+      ['sms', '💬', 'Order SMS (Android)', 'Reads delivery and refund texts from stores, with your permission', '<span class="chip">Android app</span>'],
+      ['partner', '🤝', 'Store partner link', 'Stores send your orders to us directly (how it works at scale)', '<span class="chip">For stores</span>'],
+      ['manual', '⌨️', 'Add by order number', 'Type the order number from any store’s email or app', '<a class="btn ghost sm" href="#add-order">Add</a>'],
+    ];
+    return `<h1>🛍 Your stores</h1><p class="muted">You shop in many places. returnease brings every order, return and refund into one screen.</p>
+      <section class="panel rise trustbox"><b>🔒 We never ask for your store password or OTP.</b><ul class="small"><li>We read <b>only</b> order, shipping and refund messages from shops.</li><li>Nothing else in your inbox is read or stored.</li><li>Disconnect any time; we delete the copied data.</li></ul></section>
+      ${ui.scan ? `<section class="panel scan rise"><div class="scan-bar"><i style="width:${ui.scan.pct}%"></i></div><p><b>${ui.scan.pct < 100 ? 'Looking for order emails…' : 'Done'}</b> ${esc(ui.scan.msg)}</p></section>` : ''}
+      <h2>Ways to connect</h2><div class="ways">${ways.map(([k, ic, n, d, b]) => `<div class="way rise ${k === 'gmail' && S0.gmail ? 'on' : ''}"><span class="w-ic">${ic}</span><div><b>${n}</b><small>${d}</small></div>${b}</div>`).join('')}</div>
+      <h2>Connected stores</h2><div class="stores">${S0.list.length ? S0.list.map(x => { const s = STORES.find(y => y.id === x.id), n = storeOrders(x.id); return `<div class="store rise" style="--c:${s.color}"><span class="st-logo">${s.name[0]}</span><div><b>${s.name}</b><small>${s.kind} · ${n ? `${n} items in returns` : 'no returnable orders'} · since ${day(x.at)}</small></div><button class="btn ghost sm" data-act="unlink" data-v="${s.id}">Disconnect</button></div>`; }).join('') : '<p class="muted">No stores connected yet. Connect your order emails to start.</p>'}</div>
+      <section class="panel rise" id="add-order"><h3>Add an order by number</h3><div class="add-row"><select id="ord-store" aria-label="Store">${STORES.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select><input id="ord-id" placeholder="Order number, e.g. OD-80042" aria-label="Order number"><button class="btn primary" data-act="addorder">Add</button></div></section>
+      ${ui.consent ? consentSheet() : ''}
+      <p class="sim-note">Prototype: store names and orders are simulated. The real version uses read-only Google sign-in for order emails and partner links from stores.</p>`;
+  }
+  function consentSheet() {
+    return `<div class="modal sheet-modal" role="dialog" aria-modal="true" aria-label="Allow order emails"><section class="sheet consent"><h3>Allow returnease to read your order emails?</h3>
+      <div class="cgrid"><div><b class="ok">✓ We read</b><ul class="small"><li>Order confirmations</li><li>Shipping and pickup updates</li><li>Refund and return emails</li></ul></div><div><b class="no">✕ We never read</b><ul class="small"><li>Personal or work emails</li><li>Passwords or OTPs</li><li>Bank statements</li></ul></div></div>
+      <p class="small muted">Read-only. You can disconnect any time in Your stores.</p><div class="row between"><button class="btn ghost" data-act="consentno">Not now</button><button class="btn primary" data-act="consentyes">Allow (demo)</button></div></section></div>`;
+  }
+  function scanStores() {
+    const S0 = storesState(), steps = [[15, 'Checking the last 90 days…'], [40, 'Found ShopKart order OD-77120 · 4 items'], [65, 'Found BazaarNow order OD-78811 · 2 items'], [85, 'StyleMart, QuickCart: no open returns'], [100, '2 orders · 6 items · 4 stores']];
+    let i = 0; ui.scan = { pct: 0, msg: 'Starting…' }; render();
+    const tick = () => { const [p, m] = steps[i++]; ui.scan = { pct: p, msg: m }; if (location.hash.startsWith('#/stores')) render();
+      if (i < steps.length) setTimeout(tick, 650); else { S0.gmail = true; S0.at = new Date().toISOString(); S0.list = STORES.map(x => (S0.list.find(y => y.id === x.id) || { id: x.id, at: S0.at })); log('customer', 'STORES_SYNCED', { orders: 2, items: 6, via: 'gmail-readonly' }); save(); toast('Synced: 2 orders from your stores.', 'good'); setTimeout(() => { ui.scan = null; if (location.hash.startsWith('#/stores')) render(); }, 1600); } };
+    setTimeout(tick, 300);
+  }
+
   // ---------------------------------------------------------------- RULE LAB: live business rules (judges can change them)
   const RULE_DEFAULTS = { cardMax: 7, upiMax: 3, voucherDays: 30, slaHours: 72, windowDays: 10 };
   function rules() { return Object.assign({}, RULE_DEFAULTS, (st && st.rules) || {}); }
@@ -149,7 +192,7 @@
         ${ui.user ? `<button class="avatar" data-act="menu" aria-label="Account menu" aria-expanded="${ui.menu}">${esc((ui.name || 'U')[0].toUpperCase())}</button>` : ''}
       </div>
       ${ui.menu ? `<div class="menu" role="menu"><div class="menu-h"><b>${esc(ui.name)}</b><small>${esc(ui.user.email)}</small><small id="saved">${API.mode === 'cloud' ? '☁︎ Cloud account' : '● This-device account (offline mode)'}</small></div>
-        <a href="#/reviews" role="menuitem">⭐ ${t('reviews')}</a><a href="#/judge" role="menuitem">🧪 ${t('judges')}</a><button data-act="tour" role="menuitem">▶ Guided tour</button>${installEvt ? '<button data-act="install" role="menuitem">⬇ Install app</button>' : ''}<button data-act="bigtext" role="menuitem">Aa ${ui.big ? 'Normal text' : 'Bigger text'}</button><button data-act="signout" role="menuitem">↪ ${t('signout')}</button></div>` : ''}
+        <a href="#/reviews" role="menuitem">⭐ ${t('reviews')}</a><a href="#/stores" role="menuitem">🛍 Your stores</a><a href="#/judge" role="menuitem">🧪 ${t('judges')}</a><button data-act="tour" role="menuitem">▶ Guided tour</button>${installEvt ? '<button data-act="install" role="menuitem">⬇ Install app</button>' : ''}<button data-act="bigtext" role="menuitem">Aa ${ui.big ? 'Normal text' : 'Bigger text'}</button><button data-act="signout" role="menuitem">↪ ${t('signout')}</button></div>` : ''}
     </header>`;
   }
   const TABS = [['home', 'home', 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z'], ['tracking', 'track_title', 'M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z'], ['start', 'new_return', 'M12 5v14M5 12h14'], ['reviews', 'reviews', 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z'], ['report', 'report_tab', 'M12 3l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6zM12 8v5M12 16v.5']];
@@ -167,7 +210,7 @@
     const route = (location.hash.replace(/^#\/?/, '') || 'home').split('/');
     const infoBtn = ui.info ? infoModal() : '';
     if (!ui.user) { $('#app').innerHTML = (ui.splash ? splash() : '') + authView() + infoBtn; return; }
-    const views = { home: vHome, item: vItem, start: vStart, reviews: vReviews, judge: vJudge, tracking: vTracking, exchange: vExchange, checkout: vCheckout, shipping: vShipping, report: vReport };
+    const views = { home: vHome, item: vItem, start: vStart, reviews: vReviews, judge: vJudge, tracking: vTracking, stores: vStores, exchange: vExchange, checkout: vCheckout, shipping: vShipping, report: vReport };
     const v = views[route[0]] || vHome;
     const changed = route.join('/') !== lastRoute; lastRoute = route.join('/');
     $('#app').innerHTML = header(route) + `${st.faults.offline ? '<p class="offline" role="status">You’re offline. Showing saved data; actions are queued and sent once when you’re back.</p>' : ''}<main id="main" tabindex="-1" class="${route[0] === 'judge' ? 'wide' : ''} ${changed ? 'page-in' : ''}">${v(route)}</main>` + nav(route) + infoBtn;
@@ -274,7 +317,7 @@
       <div class="cta-row"><a class="tile rise" href="#/start"><span class="t-ic">${ART.product('start')}</span><b>${t('start')}</b><small>${esc(t('tile_start_d'))}</small></a>
       <a class="tile rise" href="#/reviews"><span class="t-ic stars-ic">★★★★</span><b>${t('rate')}</b><small>${ui.reviews.length} ${esc(t('reviews_saved'))}</small></a>
       <button class="tile rise" data-act="chat"><span class="t-ic chat-ic"><i></i><i></i><i></i></span><b>${t('need')}</b><small>${esc(t('chat_ph'))}</small></button></div>
-      <h2>${t('items')}</h2><div class="cards">${['A', 'B'].map(retCard).join('')}${extra.map(retCard).join('')}</div>
+      ${storeStrip()}<h2>${t('items')}</h2><div class="cards">${['A', 'B'].map(retCard).join('')}${extra.map(retCard).join('')}</div>
       <h2>${t('products')}</h2>${productsBlock(true)}${faqBlock()}`;
   }
 
@@ -687,6 +730,12 @@
         case 'rulereset': st.rules = {}; applyRules(); log('judge', 'RULES_RESET', {}); save(); toast('Rules back to the brief’s defaults.', 'good'); break;
         case 'tour': ui.menu = false; ui.chatOpen = false; return startTour();
         case 'speak': return speak(v);
+        case 'gmail': ui.consent = true; break;
+        case 'consentno': ui.consent = false; break;
+        case 'consentyes': ui.consent = false; return scanStores();
+        case 'rescan': return scanStores();
+        case 'unlink': { const S0 = storesState(); S0.list = S0.list.filter(x => x.id !== v); if (!S0.list.length) S0.gmail = false; log('customer', 'STORE_DISCONNECTED', { store: v }); save(); toast('Disconnected. We deleted the copied order data for that store.', 'good'); break; }
+        case 'addorder': { const id = ($('#ord-id').value || '').trim().toUpperCase(), sid = $('#ord-store').value; if (!/^[A-Z0-9-]{5,20}$/.test(id)) { toast('Type the order number as it appears in the store’s email.', 'bad'); return; } const known = [O, O2].find(o => o.id === id); toast(known ? `${id} is already here.` : `${id} added from ${STORES.find(x => x.id === sid).name}. Items appear once the store confirms the order (demo).`, known ? '' : 'good'); log('customer', 'ORDER_ADDED_BY_ID', { order: id, store: sid }); save(); break; }
         case 'remind': return remind(v);
         case 'receipt': log('customer', 'RECEIPT_PRINTED', { item: v }); save(); setTimeout(() => window.print(), 50); return;
         case 'bigtext': ui.big = !ui.big; ui.menu = false; document.documentElement.dataset.big = ui.big ? '1' : ''; try { localStorage.setItem('rewind-big', ui.big ? '1' : ''); } catch (x) {} toast(ui.big ? 'Bigger text on.' : 'Normal text.', 'good'); break;
